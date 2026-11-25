@@ -27,6 +27,7 @@ RAVE encoder and decoder with latent offsets, as anira's RAVE example). One CMak
 | `rave-funk-drum-latents` | RAVE funk drum as encoder and decoder, latent offsets | in the bundle |
 | `moonshine` | Moonshine streaming (tiny English), an analyzer: the words while someone speaks, Silero VAD ending the lines | in the bundle |
 | `parakeet` | Parakeet TDT 0.6B v3 (25 languages), an analyzer: Silero VAD's stretches transcribed as they end | in the bundle |
+| `nemotron` | Nemotron 3.5 ASR streaming (40 languages) and Nemotron 3 diarization, an analyzer: who says what, a speaker per line | in the bundle |
 | `hand-tracking` | models' hand tracking (MediaPipe) on the camera: landmarks, handedness, gestures over the video | compiled in |
 | `hand-synth-piano`, `hand-synth-djembe` | the workshop's hand synth: your hands drive a RAVE decoder (CC BY-NC 4.0) | in the bundle |
 
@@ -47,7 +48,7 @@ latency. An offline render (a bounce) waits for late blocks instead of missing t
 
 The small effects are on by default (`ANIRA_EXAMPLES_WITH_EFFECTS`); the RAVE examples are
 `ANIRA_EXAMPLES_WITH_RAVE` (50 to 130 MB of weights per graph and engine), the speech examples
-`ANIRA_EXAMPLES_WITH_SPEECH` (about 1.8 GB), the hand examples `ANIRA_EXAMPLES_WITH_HANDS`.
+`ANIRA_EXAMPLES_WITH_SPEECH` (about 2.7 GB), the hand examples `ANIRA_EXAMPLES_WITH_HANDS`.
 
 A camera example (`CAMERA` in `anira_example()`: `process_frame(image)` on the camera thread,
 `overlay()` for what to draw over the video) runs in the JUCE target, which opens the camera with

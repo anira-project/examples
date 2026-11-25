@@ -18,9 +18,10 @@ namespace anira::examples {
 struct Transcript {
     struct Line {
         std::string m_text;
-        double m_seconds = 0.0;  ///< where it starts, seconds since the stream began
-        int m_speaker = -1;      ///< -1: no speaker
-        bool m_final = true;     ///< false: still revised
+        double m_seconds = 0.0;      ///< where it starts, seconds since the stream began
+        double m_end_seconds = 0.0;  ///< where it ends
+        int m_speaker = -1;          ///< -1: no speaker
+        bool m_final = true;         ///< false: still revised
     };
     std::vector<Line> m_lines;
 };
@@ -52,6 +53,7 @@ public:
         Transcript::Line line{
             .m_text = segment.m_text,
             .m_seconds = static_cast<double>(segment.m_start_sample) / sample_rate,
+            .m_end_seconds = static_cast<double>(segment.m_end_sample) / sample_rate,
             .m_speaker = segment.m_speaker,
             .m_final = segment.m_is_final};
         const auto it = std::ranges::find(m_ids, segment.m_id);

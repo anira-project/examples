@@ -33,7 +33,7 @@ option(ANIRA_EXAMPLES_WITH_EFFECTS
 option(ANIRA_EXAMPLES_WITH_RAVE
        "The RAVE examples (weights CC BY-NC 4.0, 50 to 130 MB per graph and engine)" OFF)
 option(ANIRA_EXAMPLES_WITH_SPEECH
-       "The speech-to-text examples: Moonshine and Parakeet (about 1.8 GB of ONNX weights)" OFF)
+       "The speech-to-text examples: Moonshine, Parakeet, Nemotron (about 2.7 GB of ONNX weights)" OFF)
 option(ANIRA_EXAMPLES_WITH_HANDS
        "The hand examples: hand tracking on the camera, and the hand synth (RAVE, CC BY-NC 4.0)" OFF)
 set(ANIRA_EXAMPLES_CAMERA "" CACHE STRING
@@ -62,6 +62,8 @@ endforeach()
 if(ANIRA_EXAMPLES_WITH_SPEECH)
     set(ANIRA_MODELS_WITH_MOONSHINE_STREAMING ON)
     set(ANIRA_MODELS_WITH_PARAKEET_TDT ON)
+    set(ANIRA_MODELS_WITH_NEMOTRON_ASR_STREAMING ON)
+    set(ANIRA_MODELS_WITH_NEMOTRON_DIARIZATION ON)
 endif()
 if(ANIRA_EXAMPLES_WITH_HANDS)
     set(ANIRA_MODELS_WITH_HANDTRACKING ON)

@@ -112,4 +112,14 @@ if(ANIRA_EXAMPLES_WITH_SPEECH)
                 ${_silero}
         PRODUCT "Parakeet"
         CODE Prkt)
+    anira_example(nemotron
+        HEADER nemotron/Example.h
+        LINK anira::models::nemotron_asr_streaming anira::models::nemotron_diarization
+             anira::models::silero_vad
+        CATALOG
+            ${ANIRA_EXAMPLES_MODELS_DIR}/models/nemotron-asr-streaming/nemotron-3.5-asr-streaming-int4.catalog.json
+            ${ANIRA_EXAMPLES_MODELS_DIR}/models/nemotron-diarization/nemotron-3-diarization.catalog.json
+            ${_silero}
+        PRODUCT "Nemotron"
+        CODE Nemo)
 endif()
