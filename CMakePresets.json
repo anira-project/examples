@@ -1,0 +1,46 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "ANIRA_EXAMPLES_LINK_COMPILE_COMMANDS": "ON",
+        "ANIRA_WITH_ONNXRUNTIME": "ON",
+        "ANIRA_WITH_LITERT": "ON",
+        "ANIRA_WITH_LIBTORCH": "OFF",
+        "ANIRA_WITH_EXECUTORCH": "OFF"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug (ONNX Runtime + LiteRT)",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/desktop/Debug",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "release",
+      "displayName": "Release (ONNX Runtime + LiteRT)",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/desktop/Release",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "all",
+      "displayName": "Release with the RAVE examples",
+      "inherits": "release",
+      "binaryDir": "${sourceDir}/build/desktop/all",
+      "cacheVariables": { "ANIRA_EXAMPLES_WITH_RAVE": "ON" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "debug", "configurePreset": "debug" },
+    { "name": "release", "configurePreset": "release" },
+    { "name": "all", "configurePreset": "all" }
+  ]
+}
