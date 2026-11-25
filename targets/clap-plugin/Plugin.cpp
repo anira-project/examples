@@ -125,6 +125,9 @@ clap_process_status Plugin::process(const clap_process* process) noexcept {
         if (out[c] != in[c]) { std::copy_n(in[c], samples, out[c]); }
         m_channels[c] = out[c];
     }
+    if constexpr (is_generator<Example>()) {  // makes its sound from nothing
+        for (float* channel : m_channels) { std::fill_n(channel, samples, 0.0F); }
+    }
     m_dry_wet.push(m_channels, samples);
 
     const bool offline = m_offline.load();

@@ -61,3 +61,36 @@ if(ANIRA_EXAMPLES_WITH_RAVE)
         PRODUCT "RAVE Funk Drum Latents"
         CODE Rfdl)
 endif()
+
+# The hand examples (stage 3): models' hand tracking on the camera, alone and driving a RAVE
+# decoder. Camera examples: the JUCE target only.
+if(ANIRA_EXAMPLES_WITH_HANDS)
+    add_library(anira_examples_hands INTERFACE)
+    target_include_directories(anira_examples_hands INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/hands/include)
+    target_link_libraries(anira_examples_hands INTERFACE anira::models::handtracking)
+
+    set(_mediapipe ${ANIRA_EXAMPLES_MODELS_DIR}/models/handtracking/mediapipe-gesture-recognizer.catalog.json)
+    anira_example(hand-tracking
+        HEADER hand-tracking/Example.h
+        LINK anira_examples_hands
+        CATALOG ${_mediapipe}
+        PRODUCT "Hand Tracking"
+        CODE Hand
+        EMBED
+        CAMERA)
+    anira_example(hand-synth-piano
+        HEADER hand-synth-piano/Example.h
+        LINK anira_examples_hands anira::models::rave_magnetic_resonator_piano
+        CATALOG ${ANIRA_EXAMPLES_MODELS_DIR}/models/rave-magnetic-resonator-piano/rave-magnetic-resonator-piano.catalog.json
+                ${_mediapipe}
+        PRODUCT "Hand Synth Piano"
+        CODE Hsyp
+        CAMERA)
+    anira_example(hand-synth-djembe
+        HEADER hand-synth-djembe/Example.h
+        LINK anira_examples_hands anira::models::rave_djembe
+        CATALOG ${ANIRA_EXAMPLES_MODELS_DIR}/models/rave-djembe/rave-djembe.catalog.json ${_mediapipe}
+        PRODUCT "Hand Synth Djembe"
+        CODE Hsyd
+        CAMERA)
+endif()

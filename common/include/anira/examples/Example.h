@@ -9,8 +9,10 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace anira::examples {
 
@@ -31,6 +33,36 @@ struct Meter {
     float m_max = 1.0F;
 };
 
+/// What a camera example draws over the video (CameraLike, overlay()): positions from 0 to 1
+/// across the frame as shown, mirrored like a selfie, y downwards.
+struct Overlay {
+    struct Point {
+        float m_x = 0.0F;
+        float m_y = 0.0F;
+        float m_size = 6.0F;                  ///< diameter in points
+        std::uint32_t m_colour = 0xFFFFFFFF;  ///< ARGB
+    };
+    struct Line {
+        Point m_from;
+        Point m_to;  ///< its size is the line's width
+    };
+    struct Label {
+        Point m_at;  ///< its size is the font height
+        std::string m_text;
+    };
+    std::vector<Point> m_points;
+    std::vector<Line> m_lines;
+    std::vector<Label> m_labels;
+    std::string m_caption;  ///< a line under the video (tracking rate, the mapping)
+
+    void clear() {
+        m_points.clear();
+        m_lines.clear();
+        m_labels.clear();
+        m_caption.clear();
+    }
+};
+
 /// How long an offline render (a bounce, which does not run against the clock) waits for a block.
 inline constexpr double k_offline_timeout_ms = 10'000.0;
 
@@ -46,7 +78,8 @@ inline constexpr double k_offline_timeout_ms = 10'000.0;
 ///   - get_latency() (host samples, fixed after prepare), plan_report(handler) and
 ///     set_plan(handler, plan) (audio thread), the backend choice;
 ///   - optionally k_meters (std::array of Meter) and meter(index), any thread: values a target
-///     shows (MetersLike; meter_count and meter_value below work for every example).
+///     shows (MetersLike; meter_count and meter_value below work for every example);
+///   - optionally the camera (CameraLike) and k_generator (is_generator).
 template <class E>
 concept ExampleLike =
     requires(E& e, const E& ce, const anira::Tensor& audio, std::size_t i, std::uint32_t plan) {
@@ -62,6 +95,26 @@ concept ExampleLike =
         { ce.plan_report(i) } -> std::same_as<anira::PlanReport>;
         { e.set_plan(i, plan) } noexcept;
     };
+
+/// A camera example: process_frame(image) on the camera thread for every frame (anira::examples::
+/// Image, Camera.h: BGRA, unmirrored), overlay(out) on the UI thread, what to draw over the video.
+/// A target with a camera opens it for such an example and shows the video, mirrored.
+template <class E>
+concept CameraLike = requires(E& e, const E& ce, Overlay& overlay) {
+    { E::k_camera } -> std::convertible_to<bool>;
+    ce.overlay(overlay);
+} && E::k_camera;
+
+/// A generator (k_generator true): it makes its sound from nothing, so the targets give it
+/// silence, not their input; dry/wet then scales its sound.
+template <class E>
+constexpr bool is_generator() noexcept {
+    if constexpr (requires { E::k_generator; }) {
+        return E::k_generator;
+    } else {
+        return false;
+    }
+}
 
 template <class E>
 concept MetersLike = requires(const E& e, std::size_t i) {

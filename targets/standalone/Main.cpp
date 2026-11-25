@@ -312,6 +312,9 @@ private:
                     m_planes[c][i] = in[((start + i) * k_channels) + c];
                 }
             }
+            if constexpr (anira::examples::is_generator<Example>()) {  // sound from nothing
+                for (float* channel : m_channels) { std::fill_n(channel, samples, 0.0F); }
+            }
             m_dry_wet.push(m_channels, samples);
             const std::size_t choice = m_backend.load();
             if (m_prepared && m_backends.runs(choice, false)) {

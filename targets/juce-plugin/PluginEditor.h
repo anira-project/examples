@@ -5,6 +5,7 @@
 #include <array>
 
 #include "PluginProcessor.h"
+#include "VideoView.h"
 
 /// The generic controls of the parameters, the example's meters, the line that says whether the
 /// chosen backend keeps up on this machine (what prepare measured) or why the model does not run,
@@ -28,6 +29,10 @@ private:
     void update();
 
     PluginProcessor& m_processor;
+#ifdef ANIRA_EXAMPLES_HAS_CAMERA
+    VideoView m_video;  // a camera example's video and overlay
+    static constexpr int k_video_height = 405;
+#endif
     juce::GenericAudioProcessorEditor m_controls;
     std::array<juce::Label, anira::examples::meter_count<Example>()> m_meters;
     juce::Label m_status;

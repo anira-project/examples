@@ -9,7 +9,15 @@
 #include "PluginProcessor.h"
 
 PluginEditor::PluginEditor(PluginProcessor& plugin)
-    : AudioProcessorEditor(plugin), m_processor(plugin), m_controls(plugin) {
+    : AudioProcessorEditor(plugin)
+    , m_processor(plugin)
+#ifdef ANIRA_EXAMPLES_HAS_CAMERA
+    , m_video(plugin)
+#endif
+    , m_controls(plugin) {
+#ifdef ANIRA_EXAMPLES_HAS_CAMERA
+    addAndMakeVisible(m_video);
+#endif
     addAndMakeVisible(m_controls);
     for (juce::Label& meter : m_meters) {
         meter.setJustificationType(juce::Justification::centredLeft);
@@ -20,9 +28,15 @@ PluginEditor::PluginEditor(PluginProcessor& plugin)
     // The user agrees to run the chosen backend although prepare found it not real-time here.
     m_try_nonetheless.onClick = [this] { m_processor.try_nonetheless(); };
     addChildComponent(m_try_nonetheless);
-    setSize(std::max(m_controls.getWidth(), 400),
-            m_controls.getHeight() + (static_cast<int>(m_meters.size()) * k_meter_height) +
-                k_status_height + k_button_height);
+#ifdef ANIRA_EXAMPLES_HAS_CAMERA
+    constexpr int k_video = k_video_height;
+#else
+    constexpr int k_video = 0;
+#endif
+    setSize(std::max(m_controls.getWidth(), k_video > 0 ? 720 : 400),
+            k_video + m_controls.getHeight() +
+                (static_cast<int>(m_meters.size()) * k_meter_height) + k_status_height +
+                k_button_height);
     update();
     startTimerHz(15);
 }
@@ -33,6 +47,9 @@ PluginEditor::~PluginEditor() {
 
 void PluginEditor::resized() {
     juce::Rectangle<int> area = getLocalBounds();
+#ifdef ANIRA_EXAMPLES_HAS_CAMERA
+    m_video.setBounds(area.removeFromTop(k_video_height));
+#endif
     m_controls.setBounds(area.removeFromTop(m_controls.getHeight()));
     for (juce::Label& meter : m_meters) {
         meter.setBounds(area.removeFromTop(k_meter_height).reduced(8, 0));

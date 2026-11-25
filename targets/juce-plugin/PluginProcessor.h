@@ -17,7 +17,13 @@
 #include <array>
 #include <atomic>
 #include <memory>
+#include <mutex>
 #include <string>
+
+#if __has_include(<anira/examples/Camera.h>)
+#include <anira/examples/Camera.h>
+#define ANIRA_EXAMPLES_HAS_CAMERA 1
+#endif
 
 using Example = anira::examples::Example;
 static_assert(anira::examples::ExampleLike<Example>);
@@ -29,7 +35,7 @@ static_assert(Example::k_channels == 1 || Example::k_channels == 2);
 class PluginProcessor : public juce::AudioProcessor {
 public:
     PluginProcessor();
-    ~PluginProcessor() override = default;
+    ~PluginProcessor() override;
     PluginProcessor(const PluginProcessor&) = delete;
     PluginProcessor& operator=(const PluginProcessor&) = delete;
     PluginProcessor(PluginProcessor&&) = delete;
@@ -65,6 +71,14 @@ public:
     /// Any thread: the example's meter `index` (anira::examples::meter_count<Example>()); 0 while
     /// the model does not run.
     float meter(std::size_t index) const;
+
+#ifdef ANIRA_EXAMPLES_HAS_CAMERA
+    /// For the editor, on the message thread (a camera example): the newest frame (invalid before
+    /// the first), why there is none, and what the example draws over it.
+    anira::examples::Image latest_frame() const;
+    std::string camera_error() const;
+    void overlay(anira::examples::Overlay& out) const;
+#endif
     void try_nonetheless();
 
 protected:
@@ -89,6 +103,16 @@ private:
     std::array<std::atomic<float>*, Example::k_parameters.size()> m_values{};
     std::atomic<float>* m_backend = nullptr;
     std::atomic<float>* m_mix = nullptr;
+
+#ifdef ANIRA_EXAMPLES_HAS_CAMERA
+    // The camera of a camera example: its frames to the example (camera thread) and, the newest,
+    // to the editor.
+    std::unique_ptr<anira::examples::Camera> m_camera;
+    mutable std::mutex m_frame_mutex;
+    anira::examples::Image m_frame;
+    std::string m_camera_error;
+    bool m_camera_started = false;
+#endif
 
     anira::examples::DryWet m_dry_wet;
     std::array<float*, Example::k_channels> m_channels{};

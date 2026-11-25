@@ -118,6 +118,9 @@ void external_perform64(Object* x,
             s.m_planes[c][i] = static_cast<float>(ins[c][i]);
         }
     }
+    if constexpr (anira::examples::is_generator<Example>()) {  // makes its sound from nothing
+        for (float* channel : s.m_channels) { std::fill_n(channel, samples, 0.0F); }
+    }
     s.m_dry_wet.push(s.m_channels, samples);
     const auto choice = static_cast<std::size_t>(x->m_backend);
     if (s.m_prepared && s.m_backends.runs(choice, false)) {

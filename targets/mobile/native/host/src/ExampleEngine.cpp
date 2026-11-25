@@ -79,6 +79,9 @@ void ExampleEngine::process(const float* const* in,
     }
     record(frames);  // the input's peak, before the model changes it
 
+    if constexpr (anira::examples::is_generator<Example>()) {  // makes its sound from nothing
+        for (float* channel : m_channels) { std::fill_n(channel, frames, 0.0F); }
+    }
     m_dry_wet.push(m_channels, frames);
     const std::size_t choice = m_backend.load();
     if (m_prepared && m_backends.runs(choice, m_anyway.load())) {

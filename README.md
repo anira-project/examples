@@ -22,6 +22,8 @@ RAVE encoder and decoder with latent offsets, as anira's RAVE example). One CMak
 | `silero-vad` | Silero VAD as a speech gate, with the speech probability as a meter | compiled in |
 | `rave-funk-drum`, `rave-djembe`, `rave-magnetic-resonator-piano` | RAVE, timbre transfer (CC BY-NC 4.0) | in the bundle |
 | `rave-funk-drum-latents` | RAVE funk drum as encoder and decoder, latent offsets | in the bundle |
+| `hand-tracking` | models' hand tracking (MediaPipe) on the camera: landmarks, handedness, gestures over the video | compiled in |
+| `hand-synth-piano`, `hand-synth-djembe` | the workshop's hand synth: your hands drive a RAVE decoder (CC BY-NC 4.0) | in the bundle |
 
 ## Targets
 
@@ -40,7 +42,15 @@ is not real-time on this machine), and a dry/wet mix with the dry signal delayed
 latency. An offline render (a bounce) waits for late blocks instead of missing them.
 
 The small effects are on by default (`ANIRA_EXAMPLES_WITH_EFFECTS`); the RAVE examples are
-`ANIRA_EXAMPLES_WITH_RAVE` (50 to 130 MB of weights per graph and engine).
+`ANIRA_EXAMPLES_WITH_RAVE` (50 to 130 MB of weights per graph and engine), the hand examples
+`ANIRA_EXAMPLES_WITH_HANDS`.
+
+A camera example (`CAMERA` in `anira_example()`: `process_frame(image)` on the camera thread,
+`overlay()` for what to draw over the video) runs in the JUCE target, which opens the camera with
+the first playback and shows the video, mirrored, with the overlay. The camera
+(`common/camera`): AVFoundation on macOS and iOS, OpenCV elsewhere, or everywhere with
+`ANIRA_EXAMPLES_CAMERA=opencv`. A generator (`k_generator`, the hand synth) gets silence instead of
+the input.
 
 ## Build
 

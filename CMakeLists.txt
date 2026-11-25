@@ -32,6 +32,10 @@ option(ANIRA_EXAMPLES_WITH_EFFECTS
        "The small audio examples: steerable-nafx, GuitarLSTM, the stateful LSTM, Silero VAD" ON)
 option(ANIRA_EXAMPLES_WITH_RAVE
        "The RAVE examples (weights CC BY-NC 4.0, 50 to 130 MB per graph and engine)" OFF)
+option(ANIRA_EXAMPLES_WITH_HANDS
+       "The hand examples: hand tracking on the camera, and the hand synth (RAVE, CC BY-NC 4.0)" OFF)
+set(ANIRA_EXAMPLES_CAMERA "" CACHE STRING
+    "The camera: empty for the platform's (AVFoundation on Apple, OpenCV elsewhere), or opencv")
 option(ANIRA_EXAMPLES_WITH_JUCE "Every example as a JUCE plugin (VST3, AU, Standalone)" ON)
 option(ANIRA_EXAMPLES_WITH_CLAP "Every example as a CLAP plugin (CLAP, VST3, AUv2 through clap-wrapper)" ON)
 option(ANIRA_EXAMPLES_WITH_STANDALONE "Every example as a standalone app (CHOC WebView UI, miniaudio)" ON)
@@ -60,6 +64,11 @@ endforeach()
 foreach(_model RAVE_DJEMBE RAVE_FUNK_DRUM RAVE_MAGNETIC_RESONATOR_PIANO)
     set(ANIRA_MODELS_WITH_${_model} ${ANIRA_EXAMPLES_WITH_RAVE})
 endforeach()
+if(ANIRA_EXAMPLES_WITH_HANDS)
+    set(ANIRA_MODELS_WITH_HANDTRACKING ON)
+    set(ANIRA_MODELS_WITH_RAVE_DJEMBE ON)
+    set(ANIRA_MODELS_WITH_RAVE_MAGNETIC_RESONATOR_PIANO ON)
+endif()
 add_subdirectory(models)
 
 message(STATUS "anira-examples ${TANH_VERSION_FULL} on ${TANH_OPERATING_SYSTEM} (${TANH_BINARY_FORMAT})")

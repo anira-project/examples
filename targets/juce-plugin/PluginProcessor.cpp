@@ -3,6 +3,11 @@
 #include "PluginProcessor.h"
 
 #include <anira/examples/Weights.h>
+#ifdef ANIRA_EXAMPLES_HAS_CAMERA
+#include <anira/examples/Camera.h>
+
+#include <mutex>
+#endif
 
 #include <array>
 #include <cstddef>
@@ -42,7 +47,48 @@ PluginProcessor::PluginProcessor()
     }
     m_backend = m_parameters.getRawParameterValue(k_backend_id);
     m_mix = m_parameters.getRawParameterValue(k_mix_id);
+#ifdef ANIRA_EXAMPLES_HAS_CAMERA
+    if constexpr (anira::examples::CameraLike<Example>) {
+        if (m_example) {
+            m_camera = std::make_unique<anira::examples::Camera>(
+                [this](const anira::examples::Image& image) {
+                    m_example->process_frame(image);
+                    const std::scoped_lock lock(m_frame_mutex);
+                    m_frame = image;
+                },
+                [this](const std::string& error) {
+                    const std::scoped_lock lock(m_frame_mutex);
+                    m_camera_error = error;
+                });
+        }
+    }
+#endif
 }
+
+PluginProcessor::~PluginProcessor() {
+#ifdef ANIRA_EXAMPLES_HAS_CAMERA
+    m_camera.reset();  // no frame reaches the example after this
+#endif
+}
+
+#ifdef ANIRA_EXAMPLES_HAS_CAMERA
+anira::examples::Image PluginProcessor::latest_frame() const {
+    const std::scoped_lock lock(m_frame_mutex);
+    return m_frame;
+}
+
+std::string PluginProcessor::camera_error() const {
+    const std::scoped_lock lock(m_frame_mutex);
+    return m_camera_error;
+}
+
+void PluginProcessor::overlay(anira::examples::Overlay& out) const {
+    out.clear();
+    if constexpr (anira::examples::CameraLike<Example>) {
+        if (m_example) { m_example->overlay(out); }
+    }
+}
+#endif
 
 juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::layout(
     const anira::examples::Backends& backends) {
@@ -74,6 +120,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::layout(
 }
 
 void PluginProcessor::prepareToPlay(double sample_rate, int samples_per_block) {
+#ifdef ANIRA_EXAMPLES_HAS_CAMERA
+    // The camera opens with the first playback, not at construction (a host scanning plugins
+    // would turn it on); start() again is a no-op.
+    if (m_camera && !m_camera_started) {
+        m_camera->start();
+        m_camera_started = true;
+    }
+#endif
     const auto max_block = static_cast<std::size_t>(samples_per_block);
     m_prepared = false;
     std::size_t latency = 0;
@@ -112,6 +166,9 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
     const auto samples = static_cast<std::size_t>(buffer.getNumSamples());
     for (std::size_t c = 0; c < m_channels.size(); ++c) {
         m_channels[c] = buffer.getWritePointer(static_cast<int>(c));
+    }
+    if constexpr (anira::examples::is_generator<Example>()) {
+        buffer.clear();  // a generator makes its sound from nothing
     }
     m_dry_wet.push(m_channels, samples);
 
