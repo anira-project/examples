@@ -60,6 +60,7 @@ struct State {
 struct Object {
     t_pxobject m_object;
     State* m_state;
+    void* m_meters;  // the meters' list outlet (rightmost), when the example has meters
     std::array<float, k_parameters == 0 ? 1 : k_parameters> m_parameters;
     float m_mix;
     t_atom_long m_backend;
@@ -71,6 +72,8 @@ void* external_new(t_symbol* /*name*/, long argc, t_atom* argv) {
     auto* x = static_cast<Object*>(object_alloc(s_class));
     if (x == nullptr) { return nullptr; }
     dsp_setup(reinterpret_cast<t_pxobject*>(x), Example::k_channels);
+    // Outlets are created right to left: the meters' list outlet first, then the signals.
+    x->m_meters = anira::examples::meter_count<Example>() > 0 ? listout(x) : nullptr;
     for (int c = 0; c < Example::k_channels; ++c) { outlet_new(x, "signal"); }
     x->m_object.z_misc |= Z_NO_INPLACE;
     x->m_state = new State();
@@ -195,11 +198,26 @@ void external_info(Object* x) {
                 s.m_rate);
 }
 
+/// bang: the meters' values out of the rightmost outlet, a list (a metro polls them).
+void external_bang(Object* x) {
+    constexpr std::size_t k_meters = anira::examples::meter_count<Example>();
+    if (x->m_meters == nullptr || !x->m_state->m_example) { return; }
+    std::array<t_atom, k_meters == 0 ? 1 : k_meters> values{};
+    for (std::size_t i = 0; i < k_meters; ++i) {
+        atom_setfloat(&values[i], anira::examples::meter_value(*x->m_state->m_example, i));
+    }
+    outlet_list(x->m_meters, nullptr, static_cast<short>(k_meters), values.data());
+}
+
 void external_try_nonetheless(Object* x) {
     x->m_state->m_backends.try_nonetheless(static_cast<std::size_t>(x->m_backend));
 }
 
 void external_assist(Object* /*x*/, void* /*b*/, long io, long index, char* text) {
+    if (io == ASSIST_OUTLET && index >= Example::k_channels) {
+        std::snprintf(text, 256, "(list) the meters, on bang");
+        return;
+    }
     const char* side = Example::k_channels == 2 ? (index == 0 ? " left" : " right") : "";
     std::snprintf(text, 256, "(signal)%s %s", side, io == ASSIST_INLET ? "in" : "out");
 }
@@ -217,6 +235,7 @@ extern "C" C74_EXPORT void ext_main(void* /*r*/) {
     class_addmethod(c, reinterpret_cast<method>(external_dsp64), "dsp64", A_CANT, 0);
     class_addmethod(c, reinterpret_cast<method>(external_assist), "assist", A_CANT, 0);
     class_addmethod(c, reinterpret_cast<method>(external_info), "info", 0);
+    class_addmethod(c, reinterpret_cast<method>(external_bang), "bang", 0);
     class_addmethod(c, reinterpret_cast<method>(external_try_nonetheless), "trynonetheless", 0);
 
     // The example's parameters, then the target's.

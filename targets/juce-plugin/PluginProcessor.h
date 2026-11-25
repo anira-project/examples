@@ -62,6 +62,9 @@ public:
     /// note. Whether it waits for "Try nonetheless", and the click that accepts it.
     juce::String status_line() const;
     bool waits_for_consent() const;
+    /// Any thread: the example's meter `index` (anira::examples::meter_count<Example>()); 0 while
+    /// the model does not run.
+    float meter(std::size_t index) const;
     void try_nonetheless();
 
 protected:

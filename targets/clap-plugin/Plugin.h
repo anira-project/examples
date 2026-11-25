@@ -25,7 +25,8 @@ static_assert(Example::k_channels == 1 || Example::k_channels == 2);
 /// Any example (ANIRA_EXAMPLE_HEADER) as a CLAP plugin, the way anira's CLAP example runs its
 /// model: the example's parameters, Backend (the engines of this build, then Bypass), Try
 /// nonetheless (on: run a backend that is not real-time here) and Mix, the dry signal delayed by
-/// the latency. clap-wrapper makes a VST3 and an AUv2 of it.
+/// the latency; the example's meters as read-only parameters. clap-wrapper makes a VST3 and an AUv2
+/// of it.
 class Plugin : public clap::helpers::Plugin<clap::helpers::MisbehaviourHandler::Terminate,
                                             clap::helpers::CheckingLevel::Maximal> {
 public:
@@ -78,10 +79,21 @@ private:
     static constexpr clap_id k_backend = 1001;
     static constexpr clap_id k_try_nonetheless = 1002;
     static constexpr std::size_t k_params = k_example_params + 3;
+    // The example's meters: read-only parameters (ids 2000 on), the host polls them.
+    static constexpr clap_id k_first_meter = 2000;
+    static constexpr std::size_t k_meters = meter_count<Example>();
 
     /// The index of a parameter id in m_values; none for an unknown id.
     static std::optional<std::size_t> index_of(clap_id id) noexcept;
     static clap_id id_of(std::size_t index) noexcept;
+    /// Whether `id` is one of the example's meters.
+    static bool is_meter(clap_id id) noexcept {
+        if constexpr (k_meters == 0) {
+            return false;
+        } else {
+            return id >= k_first_meter && id - k_first_meter < k_meters;
+        }
+    }
     void handle(const clap_event_header_t* event) noexcept;
 
     anira::Context m_context{anira::ContextConfig{}};

@@ -22,6 +22,10 @@
   dialog::backdrop { background: rgba(0,0,0,.3); }
   dialog h2 { font-size: 15px; margin: 0 0 8px; }
   dialog .row { grid-template-columns: 70px 1fr; }
+  .meter { display: grid; grid-template-columns: 110px 1fr 56px; align-items: center; gap: 10px; margin: 8px 0; }
+  .meter .bar { height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--muted) 25%, transparent); overflow: hidden; }
+  .meter .fill { height: 100%; width: 0; background: var(--accent); transition: width 60ms linear; }
+  .meter output { text-align: right; font-variant-numeric: tabular-nums; }
   .buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 </style>
 </head>
@@ -39,6 +43,7 @@
   <div class="buttons"><button id="cancel">Cancel</button><button id="apply">Apply</button></div>
 </dialog>
 <div id="parameters"></div>
+<div id="meters"></div>
 <div class="row"><label for="backend">Backend</label><select id="backend"></select><span></span></div>
 <div class="row"><label for="mix">Dry/Wet</label><input id="mix" type="range" min="0" max="1" step="0.01"><output id="mix-value"></output></div>
 <div id="status" class="muted"></div>
@@ -120,15 +125,27 @@
       window.aniraSetMix(Number(e.target.value));
     });
     $("try").addEventListener("click", () => window.aniraTryNonetheless());
+    s.meters.forEach((m) => {
+      const div = document.createElement("div");
+      div.className = "meter";
+      div.innerHTML = '<span></span><div class="bar"><div class="fill"></div></div><output></output>';
+      div.firstChild.textContent = m.name;
+      $("meters").append(div);
+    });
     status();
-    setInterval(status, 250);
+    setInterval(status, 66);
   }
 
-  // 4 Hz: the verdict line and "Try nonetheless" follow the app's state.
+  // 15 Hz: the meters, the verdict line and "Try nonetheless" follow the app's state.
   async function status() {
     const s = await window.aniraState();
     $("status").textContent = s.status;
     $("try").hidden = !s.waits;
+    [...$("meters").children].forEach((div, i) => {
+      const m = s.meters[i];
+      div.querySelector(".fill").style.width = `${100 * (m.value - m.min) / (m.max - m.min)}%`;
+      div.querySelector("output").textContent = m.value.toFixed(2);
+    });
   }
 
   build();

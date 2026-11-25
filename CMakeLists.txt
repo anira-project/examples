@@ -29,7 +29,7 @@ endif()
 # Options. The inference engines are anira's (ANIRA_WITH_*).
 # ------------------------------------------------------------------------------
 option(ANIRA_EXAMPLES_WITH_EFFECTS
-       "The small audio effects: steerable-nafx, GuitarLSTM, the stateful LSTM" ON)
+       "The small audio examples: steerable-nafx, GuitarLSTM, the stateful LSTM, Silero VAD" ON)
 option(ANIRA_EXAMPLES_WITH_RAVE
        "The RAVE examples (weights CC BY-NC 4.0, 50 to 130 MB per graph and engine)" OFF)
 option(ANIRA_EXAMPLES_WITH_JUCE "Every example as a JUCE plugin (VST3, AU, Standalone)" ON)
@@ -54,7 +54,7 @@ endif()
 # ------------------------------------------------------------------------------
 # models (the submodule): anira, tanh-lib and the model libraries the examples use.
 # ------------------------------------------------------------------------------
-foreach(_model GUITAR_LSTM STATEFUL_LSTM STEERABLE_NAFX)
+foreach(_model GUITAR_LSTM STATEFUL_LSTM STEERABLE_NAFX SILERO_VAD)
     set(ANIRA_MODELS_WITH_${_model} ${ANIRA_EXAMPLES_WITH_EFFECTS})
 endforeach()
 foreach(_model RAVE_DJEMBE RAVE_FUNK_DRUM RAVE_MAGNETIC_RESONATOR_PIANO)

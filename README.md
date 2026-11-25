@@ -9,7 +9,8 @@ Hugging Face at build time.
 An example is one header, `effects/<name>/Example.h`, that maps a model wrapper onto every target
 (`anira::examples::Example`, checked by the concept in `common/include/anira/examples/Example.h`):
 its name, bus (mono or stereo), parameters and anira handlers. A model that changes the sound takes
-four lines (`EffectExample<Wrapper>`); `rave-funk-drum-latents` shows an example of its own (the
+four lines (`EffectExample<Wrapper>`); an example may also have meters (`k_meters`, `meter(i)`: the
+VAD's speech probability), which every target shows; `rave-funk-drum-latents` shows an example of its own (the
 RAVE encoder and decoder with latent offsets, as anira's RAVE example). One CMake call,
 `anira_example()` (`cmake/examples.cmake`), builds it on each target.
 
@@ -18,6 +19,7 @@ RAVE encoder and decoder with latent offsets, as anira's RAVE example). One CMak
 | `steerable-nafx` | steerable-nafx, a TCN effect | compiled in |
 | `guitar-lstm` | GuitarLSTM, an amp model | compiled in |
 | `stateful-lstm` | the stateful LSTM | compiled in |
+| `silero-vad` | Silero VAD as a speech gate, with the speech probability as a meter | compiled in |
 | `rave-funk-drum`, `rave-djembe`, `rave-magnetic-resonator-piano` | RAVE, timbre transfer (CC BY-NC 4.0) | in the bundle |
 | `rave-funk-drum-latents` | RAVE funk drum as encoder and decoder, latent offsets | in the bundle |
 
@@ -29,6 +31,7 @@ RAVE encoder and decoder with latent offsets, as anira's RAVE example). One CMak
 | `targets/clap-plugin` | CLAP, and VST3 and AUv2 through clap-wrapper | `ANIRA_EXAMPLES_WITH_CLAP` |
 | `targets/standalone` | an app: audio devices through the model (miniaudio), a page in a CHOC WebView; "Audio…" picks input, output and period | `ANIRA_EXAMPLES_WITH_STANDALONE` |
 | `targets/max-external` | a Max external per example, `anira.<example>~`: the parameters, `@backend` and `@mix` as attributes, `trynonetheless`, `info` (macOS, Windows) | `ANIRA_EXAMPLES_WITH_MAX` |
+| `targets/mobile` | a React Native app (Android, iOS): one example (app.json) between microphone and output, and the same example as an iOS AUv3; its own build (`targets/mobile/README.md`) | — |
 | `targets/minimal-inference` | each engine's own API on the effects' weights, without anira | `ANIRA_EXAMPLES_WITH_MINIMAL_INFERENCE` |
 
 Every plugin and app has the example's parameters, a Backend choice (the engines of the build, then

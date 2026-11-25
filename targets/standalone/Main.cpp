@@ -209,6 +209,18 @@ public:
             parameters.addArrayElement(parameter);
         }
         state.addMember("parameters", parameters);
+        auto meters = choc::value::createEmptyArray();
+        for (std::size_t i = 0; i < anira::examples::meter_count<Example>(); ++i) {
+            const anira::examples::Meter info = anira::examples::meter_info<Example>(i);
+            auto meter = choc::value::createObject("Meter");
+            meter.addMember("name", std::string(info.m_name));
+            meter.addMember("min", info.m_min);
+            meter.addMember("max", info.m_max);
+            meter.addMember("value",
+                            m_example ? anira::examples::meter_value(*m_example, i) : 0.0F);
+            meters.addArrayElement(meter);
+        }
+        state.addMember("meters", meters);
         auto backends = choc::value::createEmptyArray();
         for (const anira::examples::BackendChoice& choice : m_backends.choices()) {
             backends.addArrayElement(std::string(choice.m_name));

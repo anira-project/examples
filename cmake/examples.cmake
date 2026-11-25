@@ -11,16 +11,29 @@
 #       [EMBED])                 the weights compiled into the binary; else copied into the bundle,
 #                                <binary dir>/../Resources/models/<repo>
 #
+# ANIRA_EXAMPLES_ONLY (a list of names) builds those examples alone; ANIRA_EXAMPLES_EMBED_ALL
+# compiles every example's weights in (an app without a bundle to put them in: the mobile app).
+#
 # Gives <name>-example (an INTERFACE target: the header, the model libraries, the weights) and, per
 # enabled target, <name>-juce (VST3, AU, Standalone), <name>-clap (CLAP, VST3, AUv2) and
 # <name>-standalone (CHOC + miniaudio) and <name>-max (the Max external anira.<name>~).
 
 include_guard(GLOBAL)
 
-set(_anira_examples_dir "${CMAKE_CURRENT_LIST_DIR}/..")
+# The examples repository, normalized: catalogs named once (Ninja refuses the same file under two
+# spellings).
+get_filename_component(_anira_examples_dir "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+# The models submodule, for the examples' catalogs.
+set(ANIRA_EXAMPLES_MODELS_DIR "${_anira_examples_dir}/models")
 
 function(anira_example name)
+    if(ANIRA_EXAMPLES_ONLY AND NOT name IN_LIST ANIRA_EXAMPLES_ONLY)
+        return()
+    endif()
     cmake_parse_arguments(PARSE_ARGV 1 _arg "EMBED" "HEADER;CATALOG;PRODUCT;CODE" "LINK")
+    if(ANIRA_EXAMPLES_EMBED_ALL)
+        set(_arg_EMBED TRUE)
+    endif()
     foreach(_required HEADER CATALOG PRODUCT CODE)
         if(NOT _arg_${_required})
             message(FATAL_ERROR "anira_example(${name}): ${_required} is required")

@@ -160,15 +160,26 @@ void Plugin::paramsFlush(const clap_input_events* in, const clap_output_events* 
 }
 
 bool Plugin::isValidParamId(clap_id id) const noexcept {
-    return index_of(id).has_value();
+    return index_of(id).has_value() || is_meter(id);
 }
 
 std::uint32_t Plugin::paramsCount() const noexcept {
-    return static_cast<std::uint32_t>(k_params);
+    return static_cast<std::uint32_t>(k_params + k_meters);
 }
 
 bool Plugin::paramsInfo(std::uint32_t index, clap_param_info* info) const noexcept {
-    if (index >= k_params) { return false; }
+    if (index >= k_params + k_meters) { return false; }
+    if (index >= k_params) {
+        const Meter meter = meter_info<Example>(index - k_params);
+        *info = {};
+        info->id = k_first_meter + static_cast<clap_id>(index - k_params);
+        info->flags = CLAP_PARAM_IS_READONLY;
+        copy("anira", info->module, sizeof(info->module));
+        copy(meter.m_name, info->name, sizeof(info->name));
+        info->min_value = meter.m_min;
+        info->max_value = meter.m_max;
+        return true;
+    }
     *info = {};
     info->id = id_of(index);
     info->flags = CLAP_PARAM_IS_AUTOMATABLE;
@@ -203,6 +214,10 @@ bool Plugin::paramsInfo(std::uint32_t index, clap_param_info* info) const noexce
 }
 
 bool Plugin::paramsValue(clap_id id, double* value) noexcept {
+    if (is_meter(id)) {
+        *value = m_example ? meter_value(*m_example, id - k_first_meter) : 0.0;
+        return true;
+    }
     const auto index = index_of(id);
     if (!index) { return false; }
     *value = m_values[*index].load();
@@ -213,7 +228,7 @@ bool Plugin::paramsValueToText(clap_id id,
                                double value,
                                char* display,
                                std::uint32_t size) noexcept {
-    if (size == 0 || !index_of(id)) { return false; }
+    if (size == 0 || !isValidParamId(id)) { return false; }
     std::array<char, 64> text{};
     switch (id) {
         case k_mix: std::snprintf(text.data(), text.size(), "%.0f %%", value); break;
@@ -233,7 +248,7 @@ bool Plugin::paramsValueToText(clap_id id,
 }
 
 bool Plugin::paramsTextToValue(clap_id id, const char* display, double* value) noexcept {
-    if (!index_of(id)) { return false; }
+    if (!isValidParamId(id)) { return false; }
     const std::string_view text(display);
     switch (id) {
         case k_backend:

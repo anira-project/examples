@@ -142,6 +142,10 @@ juce::String PluginProcessor::status_line() const {
     return {m_backends.verdict_line(backend())};
 }
 
+float PluginProcessor::meter(std::size_t index) const {
+    return m_example ? anira::examples::meter_value(*m_example, index) : 0.0F;
+}
+
 bool PluginProcessor::waits_for_consent() const {
     return m_backends.waits_for_consent(backend());
 }
