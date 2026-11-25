@@ -13,7 +13,7 @@
 #
 # Gives <name>-example (an INTERFACE target: the header, the model libraries, the weights) and, per
 # enabled target, <name>-juce (VST3, AU, Standalone), <name>-clap (CLAP, VST3, AUv2) and
-# <name>-standalone (CHOC + miniaudio).
+# <name>-standalone (CHOC + miniaudio) and <name>-max (the Max external anira.<name>~).
 
 include_guard(GLOBAL)
 
@@ -68,6 +68,9 @@ function(anira_example name)
     endif()
     if(ANIRA_EXAMPLES_WITH_STANDALONE)
         _anira_example_standalone(${name} "${_arg_PRODUCT}" "${_repo}" "${_copy}")
+    endif()
+    if(ANIRA_EXAMPLES_WITH_MAX)
+        _anira_example_max(${name} "${_repo}" "${_copy}")
     endif()
 endfunction()
 
@@ -157,4 +160,33 @@ function(_anira_example_standalone name product repo copy)
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
         MACOSX_BUNDLE_INFO_PLIST ${_anira_examples_dir}/targets/standalone/Info.plist.in)
     _anira_example_copy_weights(${name}-standalone "${repo}" "${copy}")
+endfunction()
+
+function(_anira_example_max name repo copy)
+    add_library(${name}-max MODULE ${_anira_examples_dir}/targets/max-external/External.cpp)
+    target_link_libraries(${name}-max PRIVATE ${name}-example anira_examples_max)
+    target_compile_definitions(${name}-max PRIVATE ANIRA_EXAMPLE_MAX_NAME="anira.${name}~")
+    set_target_properties(${name}-max PROPERTIES
+        OUTPUT_NAME "anira.${name}~"
+        PREFIX ""
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/max/externals")
+    if(TANH_OPERATING_SYSTEM STREQUAL "macOS")
+        set_target_properties(${name}-max PROPERTIES
+            BUNDLE TRUE
+            BUNDLE_EXTENSION mxo
+            MACOSX_BUNDLE_BUNDLE_NAME "anira.${name}~"
+            MACOSX_BUNDLE_GUI_IDENTIFIER "org.anira-project.${name}.max"
+            MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+            MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+            MACOSX_BUNDLE_INFO_PLIST ${_anira_examples_dir}/targets/max-external/Info.plist.in)
+        # Max resolves an external through ext_main alone.
+        target_link_options(${name}-max PRIVATE "LINKER:-exported_symbol,_ext_main")
+        add_custom_command(TARGET ${name}-max POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+                    "${_anira_examples_dir}/targets/max-external/PkgInfo"
+                    "$<TARGET_BUNDLE_CONTENT_DIR:${name}-max>/PkgInfo")
+    else()
+        set_target_properties(${name}-max PROPERTIES SUFFIX ".mxe64")
+    endif()
+    _anira_example_copy_weights(${name}-max "${repo}" "${copy}")
 endfunction()
