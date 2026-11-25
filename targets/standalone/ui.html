@@ -34,6 +34,7 @@
   <h2>Audio devices</h2>
   <div class="row"><label for="input">Input</label><select id="input"></select></div>
   <div class="row"><label for="output">Output</label><select id="output"></select></div>
+  <div class="row"><label for="rate">Rate</label><select id="rate"></select></div>
   <div class="row"><label for="period">Period</label><select id="period"></select></div>
   <div class="buttons"><button id="cancel">Cancel</button><button id="apply">Apply</button></div>
 </dialog>
@@ -62,7 +63,7 @@
 
   function describe(s) {
     $("device").textContent = s.rate > 0
-      ? `${s.input} → ${s.output} · ${(s.rate / 1000).toFixed(1)} kHz · ${s.block} samples · latency ${(1000 * s.latency / s.rate).toFixed(1)} ms`
+      ? `${(s.rate / 1000).toFixed(1)} kHz · ${s.block} samples · latency ${(1000 * s.latency / s.rate).toFixed(1)} ms`
       : "no audio device";
   }
 
@@ -72,10 +73,20 @@
     select.replaceChildren(new Option("System default", -1, false, chosen < 0));
     devices.forEach((d, i) => select.append(new Option(d.name + (d.default ? " (default)" : ""), i, false, i === chosen)));
   }
+  // The rates both chosen devices take natively; the chosen one stays when they still take it.
+  function fillRates(rates, chosen) {
+    $("rate").replaceChildren(new Option("Device default", 0, false, !rates.includes(chosen)),
+      ...rates.map((r) => new Option(`${(r / 1000).toFixed(r % 1000 ? 2 : 0)} kHz`, r, false, r === chosen)));
+  }
+  async function refreshRates() {
+    const chosen = Number($("rate").value);
+    fillRates(await window.aniraRates(Number($("input").value), Number($("output").value)), chosen);
+  }
   async function openSettings() {
     const d = await window.aniraDevices();
     fill($("input"), d.inputs, d.input);
     fill($("output"), d.outputs, d.output);
+    fillRates(d.rates, d.rate);
     $("period").replaceChildren(...[64, 128, 256, 512, 1024, 2048].map(
       (p) => new Option(`${p} samples`, p, false, p === d.period)));
     $("settings").showModal();
@@ -83,7 +94,8 @@
   async function apply() {
     $("settings").close();
     $("device").textContent = "opening…";
-    await window.aniraOpen(Number($("input").value), Number($("output").value), Number($("period").value));
+    await window.aniraOpen(Number($("input").value), Number($("output").value),
+                           Number($("period").value), Number($("rate").value));
     describe(await window.aniraState());
   }
 
@@ -95,6 +107,8 @@
     $("audio").addEventListener("click", openSettings);
     $("cancel").addEventListener("click", () => $("settings").close());
     $("apply").addEventListener("click", apply);
+    $("input").addEventListener("change", refreshRates);
+    $("output").addEventListener("change", refreshRates);
     s.parameters.forEach((p, i) => $("parameters").append(
       row(p.name, p.min, p.max, p.value, (p.max - p.min) / 1000, (v) => window.aniraSetParameter(i, v), fixed)));
     s.backends.forEach((b, i) => $("backend").append(new Option(b, i, false, i === s.backend)));

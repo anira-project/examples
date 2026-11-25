@@ -42,6 +42,10 @@ static_assert(Example::k_channels == 1 || Example::k_channels == 2);
 /// keep 1024).
 constexpr std::uint32_t k_period = 256;
 
+/// The rates miniaudio calls standard: a device that takes any rate offers these.
+constexpr std::array<std::uint32_t, 8>
+    k_standard_rates{16000, 22050, 24000, 32000, 44100, 48000, 88200, 96000};
+
 /// A device list's entries for the page: name and whether it is the system's default.
 choc::value::Value device_list(const std::vector<ma_device_info>& devices) {
     auto list = choc::value::createEmptyArray();
@@ -92,7 +96,7 @@ public:
         config.capture.channels = Example::k_channels;
         config.playback.format = ma_format_f32;
         config.playback.channels = Example::k_channels;
-        config.sampleRate = 0;  // the device's own
+        config.sampleRate = m_sample_rate;  // 0: the device's own
         config.periodSizeInFrames = m_period;
         config.performanceProfile = ma_performance_profile_low_latency;
         // The device's own periods, one callback each: miniaudio's fixed-size callbacks would cut
@@ -156,16 +160,34 @@ public:
         devices.addMember("input", static_cast<std::int64_t>(m_input));
         devices.addMember("output", static_cast<std::int64_t>(m_output));
         devices.addMember("period", static_cast<std::int64_t>(m_period));
+        devices.addMember("rate", static_cast<std::int64_t>(m_sample_rate));
+        devices.addMember("rates", rates(m_input, m_output));
         return devices;
+    }
+
+    /// Main thread: the rates both devices take natively (indices as in devices(); -1 the
+    /// default), ascending.
+    [[nodiscard]] choc::value::Value rates(int input, int output) {
+        const std::vector<std::uint32_t> in = native_rates(ma_device_type_capture, m_inputs, input);
+        const std::vector<std::uint32_t> out =
+            native_rates(ma_device_type_playback, m_outputs, output);
+        auto list = choc::value::createEmptyArray();
+        for (const std::uint32_t rate : in) {
+            if (std::ranges::find(out, rate) != out.end()) {
+                list.addArrayElement(static_cast<std::int64_t>(rate));
+            }
+        }
+        return list;
     }
 
     /// Main thread: the stream on other devices or another period (indices into the lists the last
     /// devices() gave; -1 the default): stopped, the example prepared again, started.
-    void open(int input, int output, std::uint32_t period) {
+    void open(int input, int output, std::uint32_t period, std::uint32_t sample_rate) {
         stop();
         m_input = input;
         m_output = output;
         m_period = std::clamp<std::uint32_t>(period, 32, 4096);
+        m_sample_rate = sample_rate;
         start();
     }
 
@@ -198,8 +220,6 @@ public:
         state.addMember("status",
                         error.empty() ? m_backends.verdict_line(m_backend.load())
                                       : "The model does not run: " + error);
-        state.addMember("input", m_open ? std::string(m_device.capture.name) : std::string());
-        state.addMember("output", m_open ? std::string(m_device.playback.name) : std::string());
         state.addMember("waits", m_backends.waits_for_consent(m_backend.load()));
         return state;
     }
@@ -227,6 +247,41 @@ private:
         }
         m_outputs.assign(outputs, outputs + output_count);
         m_inputs.assign(inputs, inputs + input_count);
+    }
+
+    /// The rates a device takes natively, ascending: the formats its driver reports (any rate: the
+    /// standard ones). The device is the list's `index`, or the system's default for -1.
+    std::vector<std::uint32_t> native_rates(ma_device_type type,
+                                            const std::vector<ma_device_info>& devices,
+                                            int index) {
+        std::vector<std::uint32_t> rates;
+        const ma_device_info* chosen = nullptr;
+        if (index >= 0 && std::cmp_less(index, devices.size())) {
+            chosen = &devices[static_cast<std::size_t>(index)];
+        } else {
+            const auto it = std::ranges::find_if(devices, [](const ma_device_info& device) {
+                return device.isDefault != 0;
+            });
+            chosen = it == devices.end() ? nullptr : &*it;
+        }
+        ma_device_info info{};
+        if (!m_has_context || ma_context_get_device_info(&m_ma,
+                                                         type,
+                                                         chosen != nullptr ? &chosen->id : nullptr,
+                                                         &info) != MA_SUCCESS) {
+            return rates;
+        }
+        for (ma_uint32 i = 0; i < info.nativeDataFormatCount; ++i) {
+            const ma_uint32 rate = info.nativeDataFormats[i].sampleRate;
+            if (rate == 0) {
+                rates.insert(rates.end(), k_standard_rates.begin(), k_standard_rates.end());
+            } else {
+                rates.push_back(rate);
+            }
+        }
+        std::ranges::sort(rates);
+        rates.erase(std::ranges::unique(rates).begin(), rates.end());
+        return rates;
     }
 
     static void callback(ma_device* device, void* output, const void* input, ma_uint32 frames) {
@@ -288,6 +343,7 @@ private:
     int m_input = -1;  // -1: the system's default
     int m_output = -1;
     std::uint32_t m_period = k_period;
+    std::uint32_t m_sample_rate = 0;  // 0: the device's own
     std::uint32_t m_block = k_period;
     bool m_prepared = false;
     bool m_has_context = false;
@@ -338,8 +394,13 @@ int run() {
     view.bind("aniraOpen", [&app](const choc::value::ValueView& args) {
         app.open(static_cast<int>(number(args, 0, -1.0)),
                  static_cast<int>(number(args, 1, -1.0)),
-                 static_cast<std::uint32_t>(number(args, 2, k_period)));
+                 static_cast<std::uint32_t>(number(args, 2, k_period)),
+                 static_cast<std::uint32_t>(number(args, 3, 0.0)));
         return choc::value::Value();
+    });
+    view.bind("aniraRates", [&app](const choc::value::ValueView& args) {
+        return app.rates(static_cast<int>(number(args, 0, -1.0)),
+                         static_cast<int>(number(args, 1, -1.0)));
     });
     view.bind("aniraTryNonetheless", [&app](const choc::value::ValueView&) {
         app.try_nonetheless();
