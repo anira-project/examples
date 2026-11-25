@@ -1,0 +1,38 @@
+{
+  "name": "anira-mobile-example",
+  "main": "index.ts",
+  "version": "0.1.0",
+  "scripts": {
+    "prebuild": "expo prebuild",
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "type-check": "tsc --noEmit"
+  },
+  "codegenConfig": {
+    "name": "AppSpecs",
+    "type": "modules",
+    "jsSrcsDir": "native/jsi/specs",
+    "android": {
+      "javaPackageName": "org.anira.mobileexample.specs"
+    },
+    "ios": {
+      "modulesProvider": {
+        "NativeAniraJSI": "NativeAniraJSIProvider"
+      }
+    }
+  },
+  "dependencies": {
+    "expo": "^56.0.0",
+    "expo-dev-client": "~56.0.20",
+    "expo-status-bar": "~56.0.4",
+    "react": "19.2.3",
+    "react-native": "0.85.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@types/react": "~19.2.10",
+    "typescript": "~6.0.3"
+  },
+  "private": true
+}

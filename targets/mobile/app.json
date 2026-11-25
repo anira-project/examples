@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "anira example",
+    "slug": "anira-mobile-example",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#101014",
+    "ios": {
+      "bundleIdentifier": "org.anira.mobileexample",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "audio"
+        ],
+        "NSMicrophoneUsageDescription": "The microphone feeds the example's neural network in real time."
+      }
+    },
+    "android": {
+      "package": "org.anira.mobileexample",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      "./native/jsi/ConfigureJSI.js",
+      "./native/auv3/ConfigureAUv3.js"
+    ],
+    "extra": {
+      "anira": {
+        "example": "silero-vad",
+        "auName": "anira: Silero VAD",
+        "auDescription": "Silero VAD speech gate",
+        "auSubtype": "svad"
+      }
+    }
+  }
+}
