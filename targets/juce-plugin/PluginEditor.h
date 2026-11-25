@@ -35,6 +35,11 @@ private:
 #endif
     juce::GenericAudioProcessorEditor m_controls;
     std::array<juce::Label, anira::examples::meter_count<Example>()> m_meters;
+    // A speech example's transcript, newest last.
+    static constexpr bool k_text = anira::examples::TextLike<Example>;
+    juce::TextEditor m_text;
+    anira::examples::Transcript m_transcript;
+    static constexpr int k_text_height = 220;
     juce::Label m_status;
     juce::TextButton m_try_nonetheless{"Try nonetheless"};
 

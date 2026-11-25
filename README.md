@@ -12,7 +12,8 @@ its name, bus (mono or stereo), parameters and anira handlers. A model that chan
 four lines (`EffectExample<Wrapper>`). An example is one of three kinds (`k_kind`): an effect
 changes the audio (latency, dry/wet), an analyzer only reads it and gives results (the targets leave
 the audio untouched), a generator makes sound from nothing (the targets give it silence). It may
-have meters (`k_meters`, `meter(i)`: the VAD's speech probability), which every target shows; `rave-funk-drum-latents` shows an example of its own (the
+have meters (`k_meters`, `meter(i)`: the VAD's speech probability) and text (`transcript()`: a
+speech example's lines), which the targets show; `rave-funk-drum-latents` shows an example of its own (the
 RAVE encoder and decoder with latent offsets, as anira's RAVE example). One CMake call,
 `anira_example()` (`cmake/examples.cmake`), builds it on each target.
 
@@ -24,6 +25,8 @@ RAVE encoder and decoder with latent offsets, as anira's RAVE example). One CMak
 | `silero-vad` | Silero VAD, an analyzer: the speech probability and whether someone speaks, as meters | compiled in |
 | `rave-funk-drum`, `rave-djembe`, `rave-magnetic-resonator-piano` | RAVE, timbre transfer (CC BY-NC 4.0) | in the bundle |
 | `rave-funk-drum-latents` | RAVE funk drum as encoder and decoder, latent offsets | in the bundle |
+| `moonshine` | Moonshine streaming (tiny English), an analyzer: the words while someone speaks, Silero VAD ending the lines | in the bundle |
+| `parakeet` | Parakeet TDT 0.6B v3 (25 languages), an analyzer: Silero VAD's stretches transcribed as they end | in the bundle |
 | `hand-tracking` | models' hand tracking (MediaPipe) on the camera: landmarks, handedness, gestures over the video | compiled in |
 | `hand-synth-piano`, `hand-synth-djembe` | the workshop's hand synth: your hands drive a RAVE decoder (CC BY-NC 4.0) | in the bundle |
 
@@ -43,8 +46,8 @@ is not real-time on this machine), and a dry/wet mix with the dry signal delayed
 latency. An offline render (a bounce) waits for late blocks instead of missing them.
 
 The small effects are on by default (`ANIRA_EXAMPLES_WITH_EFFECTS`); the RAVE examples are
-`ANIRA_EXAMPLES_WITH_RAVE` (50 to 130 MB of weights per graph and engine), the hand examples
-`ANIRA_EXAMPLES_WITH_HANDS`.
+`ANIRA_EXAMPLES_WITH_RAVE` (50 to 130 MB of weights per graph and engine), the speech examples
+`ANIRA_EXAMPLES_WITH_SPEECH` (about 1.8 GB), the hand examples `ANIRA_EXAMPLES_WITH_HANDS`.
 
 A camera example (`CAMERA` in `anira_example()`: `process_frame(image)` on the camera thread,
 `overlay()` for what to draw over the video) runs in the JUCE target, which opens the camera with

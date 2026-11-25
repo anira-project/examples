@@ -10,6 +10,7 @@
 #include <anira/examples/Backends.h>
 #include <anira/examples/DryWet.h>
 #include <anira/examples/Example.h>
+#include <anira/examples/Transcript.h>
 #include <anira/examples/Weights.h>
 #include <anira/examples/standalone/Ui.h>
 #include <choc/containers/choc_Value.h>
@@ -227,6 +228,19 @@ public:
             meters.addArrayElement(meter);
         }
         state.addMember("meters", meters);
+        auto lines = choc::value::createEmptyArray();
+        if (m_example) {
+            anira::examples::transcript_of(*m_example, m_transcript);
+            for (const auto& line : m_transcript.m_lines) {
+                auto entry = choc::value::createObject("Line");
+                entry.addMember("text", line.m_text);
+                entry.addMember("seconds", line.m_seconds);
+                entry.addMember("speaker", static_cast<std::int64_t>(line.m_speaker));
+                entry.addMember("final", line.m_final);
+                lines.addArrayElement(entry);
+            }
+        }
+        state.addMember("transcript", lines);
         auto backends = choc::value::createEmptyArray();
         for (const anira::examples::BackendChoice& choice : m_backends.choices()) {
             backends.addArrayElement(std::string(choice.m_name));
@@ -372,7 +386,8 @@ private:
 
     std::array<std::atomic<float>, Example::k_parameters.size()> m_values{};
     std::atomic<float> m_mix{1.0F};
-    int m_input = -1;  // -1: the system's default
+    mutable anira::examples::Transcript m_transcript;  // state()'s, on the main thread
+    int m_input = -1;                                  // -1: the system's default
     int m_output = -1;
     std::uint32_t m_period = k_period;
     std::uint32_t m_sample_rate = 0;  // 0: the device's own

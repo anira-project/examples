@@ -168,6 +168,11 @@ bool ExampleEngine::waits_for_consent() const noexcept {
     return !m_anyway.load() && m_backends.waits_for_consent(m_backend.load());
 }
 
+void ExampleEngine::transcript(anira::examples::Transcript& out) const {
+    out.m_lines.clear();
+    if (m_example) { anira::examples::transcript_of(*m_example, out); }
+}
+
 void ExampleEngine::try_nonetheless() noexcept {
     m_backends.try_nonetheless(m_backend.load());
 }

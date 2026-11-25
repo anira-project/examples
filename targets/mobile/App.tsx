@@ -33,6 +33,7 @@ interface EngineState {
     mix: number;
     status: string;
     waits: boolean;
+    transcript: { text: string; seconds: number; speaker: number; final: boolean }[];
 }
 
 /** Bars in the scrolling graphs — 120 entries x 32 ms ≈ the last 4 seconds. */
@@ -282,6 +283,18 @@ export default function App() {
                         output (use headphones)
                     </Text>
                 </View>
+
+                {(state?.transcript.length ?? 0) > 0 && (
+                    <View style={styles.card}>
+                        {state!.transcript.slice(-12).map((line, i) => (
+                            <Text key={i} style={[styles.value, !line.final && { opacity: 0.6 }]}>
+                                <Text style={styles.dim}>{line.seconds.toFixed(1)} s  </Text>
+                                {line.speaker >= 0 ? `speaker ${line.speaker}: ` : ""}
+                                {line.text}
+                            </Text>
+                        ))}
+                    </View>
+                )}
 
                 {error && <Text style={styles.error}>{error}</Text>}
 

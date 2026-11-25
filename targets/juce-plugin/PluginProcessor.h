@@ -10,9 +10,10 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 // clang-format on
 
-#include <anira/examples/Backends.h>  // IWYU pragma: export
-#include <anira/examples/DryWet.h>    // IWYU pragma: export
-#include <anira/examples/Example.h>   // IWYU pragma: export
+#include <anira/examples/Backends.h>    // IWYU pragma: export
+#include <anira/examples/DryWet.h>      // IWYU pragma: export
+#include <anira/examples/Example.h>     // IWYU pragma: export
+#include <anira/examples/Transcript.h>  // IWYU pragma: export
 
 #include <array>
 #include <atomic>
@@ -71,6 +72,8 @@ public:
     /// Any thread: the example's meter `index` (anira::examples::meter_count<Example>()); 0 while
     /// the model does not run.
     float meter(std::size_t index) const;
+    /// For the editor, on the message thread: a speech example's lines (none for another).
+    void transcript(anira::examples::Transcript& out) const;
 
 #ifdef ANIRA_EXAMPLES_HAS_CAMERA
     /// For the editor, on the message thread (a camera example): the newest frame (invalid before

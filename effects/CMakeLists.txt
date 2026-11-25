@@ -94,3 +94,22 @@ if(ANIRA_EXAMPLES_WITH_HANDS)
         CODE Hsyd
         CAMERA)
 endif()
+
+# The speech-to-text examples: analyzers whose results are text (a transcript the targets show).
+if(ANIRA_EXAMPLES_WITH_SPEECH)
+    set(_silero ${ANIRA_EXAMPLES_MODELS_DIR}/models/silero-vad/silero-vad.catalog.json)
+    anira_example(moonshine
+        HEADER moonshine/Example.h
+        LINK anira::models::moonshine_streaming anira::models::silero_vad
+        CATALOG ${ANIRA_EXAMPLES_MODELS_DIR}/models/moonshine-streaming/moonshine-streaming.catalog.json
+                ${_silero}
+        PRODUCT "Moonshine"
+        CODE Moon)
+    anira_example(parakeet
+        HEADER parakeet/Example.h
+        LINK anira::models::parakeet_tdt anira::models::silero_vad
+        CATALOG ${ANIRA_EXAMPLES_MODELS_DIR}/models/parakeet-tdt/parakeet-tdt-0.6b-v3.catalog.json
+                ${_silero}
+        PRODUCT "Parakeet"
+        CODE Prkt)
+endif()

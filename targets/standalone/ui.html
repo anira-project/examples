@@ -26,6 +26,10 @@
   .meter .bar { height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--muted) 25%, transparent); overflow: hidden; }
   .meter .fill { height: 100%; width: 0; background: var(--accent); transition: width 60ms linear; }
   .meter output { text-align: right; font-variant-numeric: tabular-nums; }
+  #transcript { margin: 12px 0; padding: 10px 12px; border-radius: 8px; max-height: 220px; overflow-y: auto;
+                background: color-mix(in srgb, var(--muted) 12%, transparent); font-size: 13px; line-height: 1.5; }
+  #transcript .time { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 8px; }
+  #transcript .open { opacity: 0.6; }
   .buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 </style>
 </head>
@@ -44,6 +48,7 @@
 </dialog>
 <div id="parameters"></div>
 <div id="meters"></div>
+<div id="transcript" hidden></div>
 <div class="row"><label for="backend">Backend</label><select id="backend"></select><span></span></div>
 <div class="row" id="mix-row"><label for="mix">Dry/Wet</label><input id="mix" type="range" min="0" max="1" step="0.01"><output id="mix-value"></output></div>
 <div id="status" class="muted"></div>
@@ -142,6 +147,21 @@
     const s = await window.aniraState();
     $("status").textContent = s.status;
     $("try").hidden = !s.waits;
+    if (s.transcript.length > 0) {
+      const box = $("transcript");
+      const atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 4;
+      box.hidden = false;
+      box.replaceChildren(...s.transcript.map((line) => {
+        const div = document.createElement("div");
+        if (!line.final) div.className = "open";
+        const time = document.createElement("span");
+        time.className = "time";
+        time.textContent = `${line.seconds.toFixed(1)} s`;
+        div.append(time, (line.speaker >= 0 ? `speaker ${line.speaker}: ` : "") + line.text);
+        return div;
+      }));
+      if (atBottom) box.scrollTop = box.scrollHeight;
+    }
     [...$("meters").children].forEach((div, i) => {
       const m = s.meters[i];
       div.querySelector(".fill").style.width = `${100 * (m.value - m.min) / (m.max - m.min)}%`;

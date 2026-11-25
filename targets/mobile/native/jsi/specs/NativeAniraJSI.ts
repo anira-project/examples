@@ -20,7 +20,8 @@ export interface Spec extends TurboModule {
      * latency (samples), parameters: [{name, min, max, value}],
      * meters: [{name, min, max}], backends: string[], backend (index), mix,
      * status (the backend's verdict or why the model does not run; empty when
-     * it plays), waits (a backend waiting for tryNonetheless)}.
+     * it plays), waits (a backend waiting for tryNonetheless), transcript: a
+     * speech example's lines [{text, seconds, speaker (-1: none), final}]}.
      */
     getState(): string;
 

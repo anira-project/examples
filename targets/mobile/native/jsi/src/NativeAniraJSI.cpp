@@ -141,6 +141,17 @@ jsi::String NativeAniraJSI::getState(jsi::Runtime& rt) {
     json += "],\"backend\":" + std::to_string(engine.backend());
     json += ",\"mix\":" + number(engine.mix());
     json += ",\"status\":" + json_string(engine.status());
+    anira::examples::Transcript transcript;
+    engine.transcript(transcript);
+    json += ",\"transcript\":[";
+    for (size_t i = 0; i < transcript.m_lines.size(); ++i) {
+        const auto& line = transcript.m_lines[i];
+        json += (i > 0 ? ",{\"text\":" : "{\"text\":") + json_string(line.m_text) +
+                ",\"seconds\":" + number(line.m_seconds) +
+                ",\"speaker\":" + std::to_string(line.m_speaker) +
+                ",\"final\":" + (line.m_final ? "true" : "false") + "}";
+    }
+    json += "]";
     json += ",\"waits\":";
     json += engine.waits_for_consent() ? "true" : "false";
     json += '}';

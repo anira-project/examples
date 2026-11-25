@@ -214,6 +214,11 @@ juce::String PluginProcessor::status_line() const {
     return {m_backends.verdict_line(backend())};
 }
 
+void PluginProcessor::transcript(anira::examples::Transcript& out) const {
+    out.m_lines.clear();
+    if (m_example) { anira::examples::transcript_of(*m_example, out); }
+}
+
 float PluginProcessor::meter(std::size_t index) const {
     return m_example ? anira::examples::meter_value(*m_example, index) : 0.0F;
 }

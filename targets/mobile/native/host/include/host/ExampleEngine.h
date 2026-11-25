@@ -9,6 +9,7 @@
 #include <anira/examples/Backends.h>
 #include <anira/examples/DryWet.h>
 #include <anira/examples/Example.h>
+#include <anira/examples/Transcript.h>
 
 #include <array>
 #include <atomic>
@@ -72,6 +73,8 @@ public:
     [[nodiscard]] std::string status() const;
     [[nodiscard]] bool waits_for_consent() const noexcept;
     void try_nonetheless() noexcept;
+    /** A speech example's lines (none for another). */
+    void transcript(anira::examples::Transcript& out) const;
     /** The last `max_count` entries: peaks[k] and meters[m][k] describe the same 32 ms. */
     void timelines(std::vector<float>& peaks,
                    std::array<std::vector<float>, k_meters>& meters,
