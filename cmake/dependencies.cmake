@@ -32,15 +32,6 @@ if(ANIRA_EXAMPLES_WITH_STANDALONE)
     endif()
 endif()
 
-if(ANIRA_EXAMPLES_WITH_MAX)
-    # The Max SDK's headers and import libraries (the commit Cycling '74's min-api pins).
-    FetchContent_Declare(max-sdk-base
-        GIT_REPOSITORY https://github.com/Cycling74/max-sdk-base.git
-        GIT_TAG 480bed8132f967e4035978b45e3682b970951238)
-    FetchContent_GetProperties(max-sdk-base)
-    if(NOT max-sdk-base_POPULATED)
-        FetchContent_Populate(max-sdk-base)
-    endif()
 endif()
 
 if(ANIRA_EXAMPLES_WITH_CLAP)

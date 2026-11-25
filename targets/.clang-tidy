@@ -1,7 +1,7 @@
-# The targets include JUCE, CLAP and the Max SDK through their umbrella headers (juce_<module>.h,
-# clap/clap.h, clap-helpers' .hh/.hxx pairs, ext.h and z_dsp.h), whose symbols live in internal
-# files: include-cleaner does not check those. Everything else is the repository's configuration.
+# The targets include JUCE and CLAP through their umbrella headers (juce_<module>.h, clap/clap.h,
+# clap-helpers' .hh/.hxx pairs), whose symbols live in internal files: include-cleaner does not
+# check those. Everything else is the repository's configuration.
 InheritParentConfig: true
 CheckOptions:
   - key: misc-include-cleaner.IgnoreHeaders
-    value: 'juce_.*;clap/.*;c74support/.*'
+    value: 'juce_.*;clap/.*'
