@@ -122,4 +122,15 @@ if(ANIRA_EXAMPLES_WITH_SPEECH)
             ${_silero}
         PRODUCT "Nemotron"
         CODE Nemo)
+    anira_example(transcriber
+        HEADER transcriber/Example.h
+        LINK anira::models::moonshine_streaming anira::models::parakeet_tdt
+             anira::models::nemotron_diarization anira::models::silero_vad
+        CATALOG
+            ${ANIRA_EXAMPLES_MODELS_DIR}/models/moonshine-streaming/moonshine-streaming.catalog.json
+            ${ANIRA_EXAMPLES_MODELS_DIR}/models/parakeet-tdt/parakeet-tdt-0.6b-v3.catalog.json
+            ${ANIRA_EXAMPLES_MODELS_DIR}/models/nemotron-diarization/nemotron-3-diarization.catalog.json
+            ${_silero}
+        PRODUCT "Transcriber"
+        CODE Trns)
 endif()

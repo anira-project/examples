@@ -28,6 +28,7 @@ RAVE encoder and decoder with latent offsets, as anira's RAVE example). One CMak
 | `moonshine` | Moonshine streaming (tiny English), an analyzer: the words while someone speaks, Silero VAD ending the lines | in the bundle |
 | `parakeet` | Parakeet TDT 0.6B v3 (25 languages), an analyzer: Silero VAD's stretches transcribed as they end | in the bundle |
 | `nemotron` | Nemotron 3.5 ASR streaming (40 languages) and Nemotron 3 diarization, an analyzer: who says what, a speaker per line | in the bundle |
+| `transcriber` | the speech-to-text app's way: Moonshine live, Parakeet's accurate line once a stretch ends, a speaker per line (Nemotron diarization) | in the bundle |
 | `hand-tracking` | models' hand tracking (MediaPipe) on the camera: landmarks, handedness, gestures over the video | compiled in |
 | `hand-synth-piano`, `hand-synth-djembe` | the workshop's hand synth: your hands drive a RAVE decoder (CC BY-NC 4.0) | in the bundle |
 
