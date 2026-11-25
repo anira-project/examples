@@ -72,14 +72,15 @@ inline constexpr double k_offline_timeout_ms = 10'000.0;
 ///     Parameter), k_handlers (the anira handlers it runs, each with its plan report);
 ///   - a constructor from the context and the weights (main thread; throws on missing weights);
 ///   - prepare(sample_rate, max_block) and reset() on the main thread, no process() running;
-///   - process(audio, offline): audio thread, in place on [k_channels, n] planar float; `offline`
-///     (a bounce) waits for a late block instead of missing it;
+///   - process(audio, offline): audio thread, on [k_channels, n] planar float, in place for an
+///     effect or a generator, read only for an analyzer (Kind); `offline` (a bounce) waits for a
+///     late block instead of missing it;
 ///   - set_parameter(index, value): audio thread, before process();
 ///   - get_latency() (host samples, fixed after prepare), plan_report(handler) and
 ///     set_plan(handler, plan) (audio thread), the backend choice;
 ///   - optionally k_meters (std::array of Meter) and meter(index), any thread: values a target
 ///     shows (MetersLike; meter_count and meter_value below work for every example);
-///   - optionally the camera (CameraLike) and k_generator (is_generator).
+///   - optionally the camera (CameraLike) and k_kind (Kind: Effect, Analyzer, Generator).
 template <class E>
 concept ExampleLike =
     requires(E& e, const E& ce, const anira::Tensor& audio, std::size_t i, std::uint32_t plan) {
@@ -105,14 +106,23 @@ concept CameraLike = requires(E& e, const E& ce, Overlay& overlay) {
     ce.overlay(overlay);
 } && E::k_camera;
 
-/// A generator (k_generator true): it makes its sound from nothing, so the targets give it
-/// silence, not their input; dry/wet then scales its sound.
+/// What an example does with the audio (k_kind; Effect without one):
+///
+///   - Effect: changes it, in place, get_latency() late. The targets report the latency, mix the
+///     dry signal delayed by it (dry/wet) and pass that through when bypassed.
+///   - Analyzer: only reads it and gives results (meters, an overlay, text), each as of the audio
+///     get_latency() earlier. The targets leave the audio untouched: no latency to report, no
+///     dry/wet.
+///   - Generator: makes its sound from nothing. The targets give it silence, not their input, and
+///     dry/wet scales its sound.
+enum class Kind : std::uint8_t { Effect, Analyzer, Generator };
+
 template <class E>
-constexpr bool is_generator() noexcept {
-    if constexpr (requires { E::k_generator; }) {
-        return E::k_generator;
+constexpr Kind kind_of() noexcept {
+    if constexpr (requires { E::k_kind; }) {
+        return E::k_kind;
     } else {
-        return false;
+        return Kind::Effect;
     }
 }
 

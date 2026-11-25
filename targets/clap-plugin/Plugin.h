@@ -95,6 +95,8 @@ private:
         }
     }
     void handle(const clap_event_header_t* event) noexcept;
+    /// Audio thread: the example on the block in m_audio with the chosen plan and the parameters.
+    void run(std::size_t samples, bool offline, std::size_t choice) noexcept;
 
     anira::Context m_context{anira::ContextConfig{}};
     std::unique_ptr<Example> m_example;  // none when its weights are missing

@@ -114,6 +114,8 @@ jsi::String NativeAniraJSI::getState(jsi::Runtime& rt) {
     using Example = ExampleEngine::Example;
     const ExampleEngine& engine = m_host->engine();
     std::string json = "{\"name\":" + json_string(Example::k_name);
+    json += ",\"analyzer\":";
+    json += ExampleEngine::k_analyzer ? "true" : "false";
     json += ",\"audioRunning\":";
     json += m_audio_running ? "true" : "false";
     json += ",\"sampleRate\":" + number(engine.sample_rate());

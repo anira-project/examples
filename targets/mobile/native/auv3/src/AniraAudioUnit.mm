@@ -164,6 +164,7 @@ NSString* string_of(std::string_view text) {
                                                                     flags:writable
                                                              valueStrings:backendNames
                                                       dependentParameters:nil]];
+    if (!ExampleEngine::k_analyzer) {  // an analyzer leaves the audio as it is
     [parameters addObject:[AUParameterTree createParameterWithIdentifier:@"mix"
                                                                      name:@"Dry/Wet"
                                                                   address:AniraParameterMix
@@ -174,6 +175,7 @@ NSString* string_of(std::string_view text) {
                                                                     flags:writable
                                                              valueStrings:nil
                                                       dependentParameters:nil]];
+    }
     [parameters addObject:[AUParameterTree createParameterWithIdentifier:@"trynonetheless"
                                                                      name:@"Try nonetheless"
                                                                   address:AniraParameterTryNonetheless

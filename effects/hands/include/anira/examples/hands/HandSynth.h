@@ -37,7 +37,7 @@ public:
     static constexpr int k_channels = 1;
     static constexpr std::size_t k_handlers = 1;  // the decoder (the tracker runs on its own)
     static constexpr bool k_camera = true;
-    static constexpr bool k_generator = true;
+    static constexpr Kind k_kind = Kind::Generator;
     static constexpr std::array<Parameter, 3> k_parameters{{
         {.m_id = "smoothing",
          .m_name = "Smoothing (ms)",

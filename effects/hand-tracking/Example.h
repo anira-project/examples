@@ -18,11 +18,12 @@
 namespace anira::examples {
 
 /// Hand tracking (models' HandTracker, MediaPipe's gesture recognizer, weights Apache-2.0): the
-/// camera's hands, landmarks, handedness and gestures drawn over the video. The audio passes
-/// through untouched.
+/// camera's hands, landmarks, handedness and gestures drawn over the video. An analyzer: the audio
+/// passes through untouched.
 class Example {
 public:
     static constexpr std::string_view k_name = "Hand Tracking";
+    static constexpr Kind k_kind = Kind::Analyzer;
     static constexpr int k_channels = 1;
     static constexpr std::size_t k_handlers = 1;  // the landmark model
     static constexpr bool k_camera = true;

@@ -109,13 +109,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::layout(
                                                      "Backend",
                                                      names,
                                                      static_cast<int>(backends.default_choice())));
-    parameters.add(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{k_mix_id, 1},
-        "Dry/Wet",
-        juce::NormalisableRange<float>{0.0F, 1.0F},
-        1.0F,
-        juce::AudioParameterFloatAttributes().withStringFromValueFunction(
-            [](float x, int /*length*/) { return juce::String(x * 100.0F, 0) + " %"; })));
+    if constexpr (anira::examples::kind_of<Example>() != anira::examples::Kind::Analyzer) {
+        parameters.add(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID{k_mix_id, 1},
+            "Dry/Wet",
+            juce::NormalisableRange<float>{0.0F, 1.0F},
+            1.0F,
+            juce::AudioParameterFloatAttributes().withStringFromValueFunction(
+                [](float x, int /*length*/) { return juce::String(x * 100.0F, 0) + " %"; })));
+    }
     return parameters;
 }
 
@@ -139,7 +141,10 @@ void PluginProcessor::prepareToPlay(double sample_rate, int samples_per_block) {
             for (const std::string& line : m_backends.read(*m_example)) {
                 juce::Logger::writeToLog(juce::String(line));
             }
-            latency = m_example->get_latency();
+            // An analyzer leaves the audio as it is: nothing for the host to compensate.
+            if constexpr (anira::examples::kind_of<Example>() != anira::examples::Kind::Analyzer) {
+                latency = m_example->get_latency();
+            }
             m_prepared = true;
         } catch (const std::exception& error) {
             m_error = error.what();
@@ -167,7 +172,15 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
     for (std::size_t c = 0; c < m_channels.size(); ++c) {
         m_channels[c] = buffer.getWritePointer(static_cast<int>(c));
     }
-    if constexpr (anira::examples::is_generator<Example>()) {
+    const bool offline = isNonRealtime();
+    const std::size_t choice = backend();
+    constexpr anira::examples::Kind k_kind = anira::examples::kind_of<Example>();
+    if constexpr (k_kind == anira::examples::Kind::Analyzer) {
+        // It only reads the audio: the audio stays as it is, whatever runs.
+        if (m_prepared && m_backends.runs(choice, offline)) { run(samples, offline, choice); }
+        return;
+    }
+    if constexpr (k_kind == anira::examples::Kind::Generator) {
         buffer.clear();  // a generator makes its sound from nothing
     }
     m_dry_wet.push(m_channels, samples);
@@ -175,19 +188,21 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
     // A choice without a plan here, or not real-time here and not accepted, passes the dry signal
     // through, time-aligned; an offline render (a bounce) runs it whatever its verdict and waits
     // for late blocks, since it does not run against the clock.
-    const bool offline = isNonRealtime();
-    const std::size_t choice = backend();
     if (m_prepared && m_backends.runs(choice, offline)) {
-        m_backends.select(*m_example, choice);
-        for (std::size_t i = 0; i < m_values.size(); ++i) {
-            m_example->set_parameter(i, m_values[i]->load());
-        }
-        m_audio.shape[1] = static_cast<std::int64_t>(samples);
-        m_example->process(m_audio, offline);  // in place
+        run(samples, offline, choice);  // in place
         m_dry_wet.mix(m_channels, samples, m_mix->load());
     } else {
         m_dry_wet.dry(m_channels, samples);
     }
+}
+
+void PluginProcessor::run(std::size_t samples, bool offline, std::size_t choice) noexcept {
+    m_backends.select(*m_example, choice);
+    for (std::size_t i = 0; i < m_values.size(); ++i) {
+        m_example->set_parameter(i, m_values[i]->load());
+    }
+    m_audio.shape[1] = static_cast<std::int64_t>(samples);
+    m_example->process(m_audio, offline);
 }
 
 juce::AudioProcessorEditor* PluginProcessor::createEditor() {

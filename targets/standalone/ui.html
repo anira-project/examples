@@ -45,7 +45,7 @@
 <div id="parameters"></div>
 <div id="meters"></div>
 <div class="row"><label for="backend">Backend</label><select id="backend"></select><span></span></div>
-<div class="row"><label for="mix">Dry/Wet</label><input id="mix" type="range" min="0" max="1" step="0.01"><output id="mix-value"></output></div>
+<div class="row" id="mix-row"><label for="mix">Dry/Wet</label><input id="mix" type="range" min="0" max="1" step="0.01"><output id="mix-value"></output></div>
 <div id="status" class="muted"></div>
 <button id="try" hidden>Try nonetheless</button>
 <script>
@@ -118,6 +118,7 @@
       row(p.name, p.min, p.max, p.value, (p.max - p.min) / 1000, (v) => window.aniraSetParameter(i, v), fixed)));
     s.backends.forEach((b, i) => $("backend").append(new Option(b, i, false, i === s.backend)));
     $("backend").addEventListener("change", (e) => window.aniraSetBackend(Number(e.target.value)));
+    $("mix-row").hidden = s.analyzer;  // an analyzer leaves the audio as it is
     $("mix").value = s.mix;
     $("mix-value").textContent = `${Math.round(100 * s.mix)} %`;
     $("mix").addEventListener("input", (e) => {

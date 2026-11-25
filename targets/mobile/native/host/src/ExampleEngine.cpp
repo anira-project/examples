@@ -40,7 +40,10 @@ void ExampleEngine::prepare(double sample_rate, std::uint32_t max_block) {
         try {
             m_example->prepare(sample_rate, max_block);
             (void)m_backends.read(*m_example);
-            latency = m_example->get_latency();
+            // An analyzer leaves the audio as it is: no latency.
+            if constexpr (anira::examples::kind_of<Example>() != anira::examples::Kind::Analyzer) {
+                latency = m_example->get_latency();
+            }
             m_prepared = true;
         } catch (const std::exception& error) { m_error = error.what(); }
     }
@@ -79,21 +82,22 @@ void ExampleEngine::process(const float* const* in,
     }
     record(frames);  // the input's peak, before the model changes it
 
-    if constexpr (anira::examples::is_generator<Example>()) {  // makes its sound from nothing
-        for (float* channel : m_channels) { std::fill_n(channel, frames, 0.0F); }
-    }
-    m_dry_wet.push(m_channels, frames);
     const std::size_t choice = m_backend.load();
-    if (m_prepared && m_backends.runs(choice, m_anyway.load())) {
-        m_backends.select(*m_example, choice);
-        for (std::size_t i = 0; i < m_values.size(); ++i) {
-            m_example->set_parameter(i, m_values[i].load());
-        }
-        m_audio.shape[1] = static_cast<std::int64_t>(frames);
-        m_example->process(m_audio, false);  // in place
-        m_dry_wet.mix(m_channels, frames, m_mix.load());
+    const bool runs = m_prepared && m_backends.runs(choice, m_anyway.load());
+    constexpr anira::examples::Kind k_kind = anira::examples::kind_of<Example>();
+    if constexpr (k_kind == anira::examples::Kind::Analyzer) {
+        if (runs) { run(frames, choice); }  // it only reads: the input passes through
     } else {
-        m_dry_wet.dry(m_channels, frames);
+        if constexpr (k_kind == anira::examples::Kind::Generator) {  // sound from nothing
+            for (float* channel : m_channels) { std::fill_n(channel, frames, 0.0F); }
+        }
+        m_dry_wet.push(m_channels, frames);
+        if (runs) {
+            run(frames, choice);  // in place
+            m_dry_wet.mix(m_channels, frames, m_mix.load());
+        } else {
+            m_dry_wet.dry(m_channels, frames);
+        }
     }
 
     // The example's channels onto the host's: the same, spread, or averaged.
@@ -107,6 +111,15 @@ void ExampleEngine::process(const float* const* in,
             std::copy_n(m_planes[std::min<std::size_t>(h, k_channels - 1)].data(), frames, target);
         }
     }
+}
+
+void ExampleEngine::run(std::uint32_t frames, std::size_t choice) noexcept {
+    m_backends.select(*m_example, choice);
+    for (std::size_t i = 0; i < m_values.size(); ++i) {
+        m_example->set_parameter(i, m_values[i].load());
+    }
+    m_audio.shape[1] = static_cast<std::int64_t>(frames);
+    m_example->process(m_audio, false);
 }
 
 void ExampleEngine::record(std::uint32_t frames) noexcept {

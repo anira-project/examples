@@ -94,7 +94,10 @@ bool Plugin::activate(double sample_rate,
             for (const std::string& line : m_backends.read(*m_example)) {
                 std::fprintf(stderr, "%s\n", line.c_str());
             }
-            m_latency = static_cast<std::uint32_t>(m_example->get_latency());
+            // An analyzer leaves the audio as it is: nothing for the host to compensate.
+            if constexpr (kind_of<Example>() != Kind::Analyzer) {
+                m_latency = static_cast<std::uint32_t>(m_example->get_latency());
+            }
             m_prepared = true;
         } catch (const std::exception& error) { std::fprintf(stderr, "anira: %s\n", error.what()); }
     }
@@ -125,21 +128,21 @@ clap_process_status Plugin::process(const clap_process* process) noexcept {
         if (out[c] != in[c]) { std::copy_n(in[c], samples, out[c]); }
         m_channels[c] = out[c];
     }
-    if constexpr (is_generator<Example>()) {  // makes its sound from nothing
-        for (float* channel : m_channels) { std::fill_n(channel, samples, 0.0F); }
-    }
-    m_dry_wet.push(m_channels, samples);
-
     const bool offline = m_offline.load();
     const auto choice = static_cast<std::size_t>(m_values[k_example_params + 1].load());
     const bool anyway = offline || m_values[k_example_params + 2].load() >= 0.5;
+    constexpr Kind k_kind = kind_of<Example>();
+    if constexpr (k_kind == Kind::Analyzer) {
+        // It only reads the audio: the copy passes through, whatever runs.
+        if (m_prepared && m_backends.runs(choice, anyway)) { run(samples, offline, choice); }
+        return CLAP_PROCESS_CONTINUE;
+    }
+    if constexpr (k_kind == Kind::Generator) {  // makes its sound from nothing
+        for (float* channel : m_channels) { std::fill_n(channel, samples, 0.0F); }
+    }
+    m_dry_wet.push(m_channels, samples);
     if (m_prepared && m_backends.runs(choice, anyway)) {
-        m_backends.select(*m_example, choice);
-        for (std::size_t i = 0; i < k_example_params; ++i) {
-            m_example->set_parameter(i, static_cast<float>(m_values[i].load()));
-        }
-        m_audio.shape[1] = static_cast<std::int64_t>(samples);
-        m_example->process(m_audio, offline);  // in place
+        run(samples, offline, choice);  // in place
         m_dry_wet.mix(m_channels,
                       samples,
                       static_cast<float>(m_values[k_example_params].load() / 100.0));
@@ -147,6 +150,15 @@ clap_process_status Plugin::process(const clap_process* process) noexcept {
         m_dry_wet.dry(m_channels, samples);
     }
     return CLAP_PROCESS_CONTINUE;
+}
+
+void Plugin::run(std::size_t samples, bool offline, std::size_t choice) noexcept {
+    m_backends.select(*m_example, choice);
+    for (std::size_t i = 0; i < k_example_params; ++i) {
+        m_example->set_parameter(i, static_cast<float>(m_values[i].load()));
+    }
+    m_audio.shape[1] = static_cast<std::int64_t>(samples);
+    m_example->process(m_audio, offline);
 }
 
 void Plugin::handle(const clap_event_header_t* event) noexcept {
@@ -200,6 +212,9 @@ bool Plugin::paramsInfo(std::uint32_t index, clap_param_info* info) const noexce
             copy("Mix", info->name, sizeof(info->name));
             info->max_value = 100.0;
             info->default_value = 100.0;
+            if constexpr (kind_of<Example>() == Kind::Analyzer) {
+                info->flags = CLAP_PARAM_IS_HIDDEN;  // an analyzer leaves the audio as it is
+            }
             break;
         case k_backend:
             copy("Backend", info->name, sizeof(info->name));

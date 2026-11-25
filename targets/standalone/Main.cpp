@@ -134,7 +134,11 @@ public:
                 for (const std::string& line : m_backends.read(*m_example)) {
                     std::fprintf(stderr, "%s\n", line.c_str());
                 }
-                m_latency = m_example->get_latency();
+                // An analyzer leaves the audio as it is: no latency.
+                if constexpr (anira::examples::kind_of<Example>() !=
+                              anira::examples::Kind::Analyzer) {
+                    m_latency = m_example->get_latency();
+                }
                 m_prepared = true;
             } catch (const std::exception& error) { m_error = error.what(); }
         }
@@ -195,6 +199,8 @@ public:
     [[nodiscard]] choc::value::Value state() const {
         auto state = choc::value::createObject("State");
         state.addMember("name", std::string(Example::k_name));
+        state.addMember("analyzer",
+                        anira::examples::kind_of<Example>() == anira::examples::Kind::Analyzer);
         state.addMember("rate", m_rate);
         state.addMember("block", static_cast<std::int64_t>(m_block));
         state.addMember("latency", static_cast<std::int64_t>(m_latency));
@@ -301,6 +307,16 @@ private:
             ->process(static_cast<float*>(output), static_cast<const float*>(input), frames);
     }
 
+    /// Audio thread: the example on the block in m_audio with the chosen plan and the parameters.
+    void run(std::size_t samples, std::size_t choice) noexcept {
+        m_backends.select(*m_example, choice);
+        for (std::size_t i = 0; i < m_values.size(); ++i) {
+            m_example->set_parameter(i, m_values[i].load());
+        }
+        m_audio.shape[1] = static_cast<std::int64_t>(samples);
+        m_example->process(m_audio, false);
+    }
+
     /// Audio thread: interleaved in, interleaved out, one device period (at most m_block; cut
     /// only if a device ever brings more than it said).
     void process(float* out, const float* in, std::size_t frames) noexcept {
@@ -312,21 +328,22 @@ private:
                     m_planes[c][i] = in[((start + i) * k_channels) + c];
                 }
             }
-            if constexpr (anira::examples::is_generator<Example>()) {  // sound from nothing
-                for (float* channel : m_channels) { std::fill_n(channel, samples, 0.0F); }
-            }
-            m_dry_wet.push(m_channels, samples);
             const std::size_t choice = m_backend.load();
-            if (m_prepared && m_backends.runs(choice, false)) {
-                m_backends.select(*m_example, choice);
-                for (std::size_t i = 0; i < m_values.size(); ++i) {
-                    m_example->set_parameter(i, m_values[i].load());
-                }
-                m_audio.shape[1] = static_cast<std::int64_t>(samples);
-                m_example->process(m_audio, false);  // in place
-                m_dry_wet.mix(m_channels, samples, m_mix.load());
+            const bool runs = m_prepared && m_backends.runs(choice, false);
+            constexpr anira::examples::Kind k_kind = anira::examples::kind_of<Example>();
+            if constexpr (k_kind == anira::examples::Kind::Analyzer) {
+                if (runs) { run(samples, choice); }  // it only reads: the input passes through
             } else {
-                m_dry_wet.dry(m_channels, samples);
+                if constexpr (k_kind == anira::examples::Kind::Generator) {  // sound from nothing
+                    for (float* channel : m_channels) { std::fill_n(channel, samples, 0.0F); }
+                }
+                m_dry_wet.push(m_channels, samples);
+                if (runs) {
+                    run(samples, choice);  // in place
+                    m_dry_wet.mix(m_channels, samples, m_mix.load());
+                } else {
+                    m_dry_wet.dry(m_channels, samples);
+                }
             }
             for (std::size_t i = 0; i < samples; ++i) {
                 for (std::size_t c = 0; c < k_channels; ++c) {

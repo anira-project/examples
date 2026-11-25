@@ -32,6 +32,8 @@ public:
     using Example = anira::examples::Example;
     static constexpr std::size_t k_meters = anira::examples::meter_count<Example>();
     static constexpr std::size_t k_timeline_capacity = 512;
+    static constexpr bool k_analyzer =
+        anira::examples::kind_of<Example>() == anira::examples::Kind::Analyzer;
 
     ExampleEngine();
     ExampleEngine(const ExampleEngine&) = delete;
@@ -77,6 +79,7 @@ public:
 
 private:
     void record(std::uint32_t frames) noexcept;
+    void run(std::uint32_t frames, std::size_t choice) noexcept;
 
     anira::Context m_context{anira::ContextConfig{}};
     std::unique_ptr<Example> m_example;  // none when its weights are missing

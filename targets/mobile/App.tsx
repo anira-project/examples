@@ -22,6 +22,7 @@ interface Range {
 
 interface EngineState {
     name: string;
+    analyzer: boolean;
     audioRunning: boolean;
     sampleRate: number;
     latency: number;
@@ -241,7 +242,7 @@ export default function App() {
                             />
                         </View>
                     ))}
-                    <View style={styles.control}>
+                    {!state?.analyzer && <View style={styles.control}>
                         <Row label="dry/wet" value={`${Math.round(mix * 100)} %`} />
                         <Slider
                             min={0}
@@ -252,7 +253,7 @@ export default function App() {
                                 NativeAniraJSI.setMix(v);
                             }}
                         />
-                    </View>
+                    </View>}
                 </View>
 
                 <View style={styles.card}>

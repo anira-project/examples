@@ -90,6 +90,8 @@ private:
     static juce::AudioProcessorValueTreeState::ParameterLayout layout(
         const anira::examples::Backends& backends);
     [[nodiscard]] std::size_t backend() const noexcept;
+    /// Audio thread: the example on the block in m_audio with the chosen plan and the parameters.
+    void run(std::size_t samples, bool offline, std::size_t choice) noexcept;
 
     // The library default (half the hardware threads for inference).
     anira::Context m_context{anira::ContextConfig{}};
@@ -102,7 +104,7 @@ private:
     // The parameters' values (APVTS's atomics: read on the audio thread without a lock).
     std::array<std::atomic<float>*, Example::k_parameters.size()> m_values{};
     std::atomic<float>* m_backend = nullptr;
-    std::atomic<float>* m_mix = nullptr;
+    std::atomic<float>* m_mix = nullptr;  // none for an analyzer
 
 #ifdef ANIRA_EXAMPLES_HAS_CAMERA
     // The camera of a camera example: its frames to the example (camera thread) and, the newest,

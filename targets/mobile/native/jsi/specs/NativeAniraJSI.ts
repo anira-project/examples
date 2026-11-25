@@ -15,7 +15,8 @@ export interface Spec extends TurboModule {
     stopAudio(): void;
 
     /**
-     * The example and the engine, JSON: {name, audioRunning, sampleRate,
+     * The example and the engine, JSON: {name, analyzer (it leaves the audio
+     * as it is: no dry/wet), audioRunning, sampleRate,
      * latency (samples), parameters: [{name, min, max, value}],
      * meters: [{name, min, max}], backends: string[], backend (index), mix,
      * status (the backend's verdict or why the model does not run; empty when

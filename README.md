@@ -9,8 +9,10 @@ Hugging Face at build time.
 An example is one header, `effects/<name>/Example.h`, that maps a model wrapper onto every target
 (`anira::examples::Example`, checked by the concept in `common/include/anira/examples/Example.h`):
 its name, bus (mono or stereo), parameters and anira handlers. A model that changes the sound takes
-four lines (`EffectExample<Wrapper>`); an example may also have meters (`k_meters`, `meter(i)`: the
-VAD's speech probability), which every target shows; `rave-funk-drum-latents` shows an example of its own (the
+four lines (`EffectExample<Wrapper>`). An example is one of three kinds (`k_kind`): an effect
+changes the audio (latency, dry/wet), an analyzer only reads it and gives results (the targets leave
+the audio untouched), a generator makes sound from nothing (the targets give it silence). It may
+have meters (`k_meters`, `meter(i)`: the VAD's speech probability), which every target shows; `rave-funk-drum-latents` shows an example of its own (the
 RAVE encoder and decoder with latent offsets, as anira's RAVE example). One CMake call,
 `anira_example()` (`cmake/examples.cmake`), builds it on each target.
 
@@ -19,7 +21,7 @@ RAVE encoder and decoder with latent offsets, as anira's RAVE example). One CMak
 | `steerable-nafx` | steerable-nafx, a TCN effect | compiled in |
 | `guitar-lstm` | GuitarLSTM, an amp model | compiled in |
 | `stateful-lstm` | the stateful LSTM | compiled in |
-| `silero-vad` | Silero VAD as a speech gate, with the speech probability as a meter | compiled in |
+| `silero-vad` | Silero VAD, an analyzer: the speech probability and whether someone speaks, as meters | compiled in |
 | `rave-funk-drum`, `rave-djembe`, `rave-magnetic-resonator-piano` | RAVE, timbre transfer (CC BY-NC 4.0) | in the bundle |
 | `rave-funk-drum-latents` | RAVE funk drum as encoder and decoder, latent offsets | in the bundle |
 | `hand-tracking` | models' hand tracking (MediaPipe) on the camera: landmarks, handedness, gestures over the video | compiled in |
@@ -48,8 +50,7 @@ A camera example (`CAMERA` in `anira_example()`: `process_frame(image)` on the c
 `overlay()` for what to draw over the video) runs in the JUCE target, which opens the camera with
 the first playback and shows the video, mirrored, with the overlay. The camera
 (`common/camera`): AVFoundation on macOS and iOS, OpenCV elsewhere, or everywhere with
-`ANIRA_EXAMPLES_CAMERA=opencv`. A generator (`k_generator`, the hand synth) gets silence instead of
-the input.
+`ANIRA_EXAMPLES_CAMERA=opencv`. The hand tracking is an analyzer with a camera, the hand synth a generator with one.
 
 ## Build
 
