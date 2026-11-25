@@ -12,7 +12,8 @@
 #                                <binary dir>/../Resources/models/<repo>
 #
 # Gives <name>-example (an INTERFACE target: the header, the model libraries, the weights) and, per
-# enabled target, <name>-juce (VST3, AU, Standalone) and <name>-clap (CLAP, VST3, AUv2).
+# enabled target, <name>-juce (VST3, AU, Standalone), <name>-clap (CLAP, VST3, AUv2) and
+# <name>-standalone (CHOC + miniaudio).
 
 include_guard(GLOBAL)
 
@@ -64,6 +65,9 @@ function(anira_example name)
     endif()
     if(ANIRA_EXAMPLES_WITH_CLAP)
         _anira_example_clap(${name} "${_arg_PRODUCT}" ${_arg_CODE} "${_repo}" "${_copy}")
+    endif()
+    if(ANIRA_EXAMPLES_WITH_STANDALONE)
+        _anira_example_standalone(${name} "${_arg_PRODUCT}" "${_repo}" "${_copy}")
     endif()
 endfunction()
 
@@ -139,4 +143,18 @@ function(_anira_example_clap name product code repo copy)
     foreach(_format clap vst3 auv2)
         _anira_example_copy_weights(${name}-clap_${_format} "${repo}" "${copy}")
     endforeach()
+endfunction()
+
+function(_anira_example_standalone name product repo copy)
+    add_executable(${name}-standalone MACOSX_BUNDLE
+        ${_anira_examples_dir}/targets/standalone/Main.cpp)
+    target_link_libraries(${name}-standalone PRIVATE ${name}-example anira_examples_standalone)
+    set_target_properties(${name}-standalone PROPERTIES
+        OUTPUT_NAME "${product}"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "org.anira-project.${name}.standalone"
+        MACOSX_BUNDLE_BUNDLE_NAME "${product}"
+        MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_INFO_PLIST ${_anira_examples_dir}/targets/standalone/Info.plist.in)
+    _anira_example_copy_weights(${name}-standalone "${repo}" "${copy}")
 endfunction()

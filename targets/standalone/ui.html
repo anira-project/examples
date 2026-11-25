@@ -1,0 +1,123 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>anira</title>
+<style>
+  :root { color-scheme: light dark; --fg: #1d1d1f; --muted: #6e6e73; --bg: #f5f5f7; --accent: #0071e3; }
+  @media (prefers-color-scheme: dark) { :root { --fg: #f5f5f7; --muted: #a1a1a6; --bg: #1d1d1f; --accent: #2997ff; } }
+  body { margin: 0; padding: 20px; font: 14px -apple-system, system-ui, sans-serif; color: var(--fg); background: var(--bg); }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .row { display: grid; grid-template-columns: 110px 1fr 56px; align-items: center; gap: 10px; margin: 10px 0; }
+  .row output { text-align: right; font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  select { width: 100%; }
+  #status { min-height: 2.6em; margin-top: 14px; }
+  button { margin-top: 6px; }
+  [hidden] { display: none; }
+  .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  dialog { border: none; border-radius: 10px; padding: 16px 18px; width: min(380px, 85vw); color: var(--fg); background: var(--bg); box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+  dialog::backdrop { background: rgba(0,0,0,.3); }
+  dialog h2 { font-size: 15px; margin: 0 0 8px; }
+  dialog .row { grid-template-columns: 70px 1fr; }
+  .buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="head">
+  <div><h1 id="name">anira</h1><div class="muted" id="device"></div></div>
+  <button id="audio">Audio…</button>
+</div>
+<dialog id="settings">
+  <h2>Audio devices</h2>
+  <div class="row"><label for="input">Input</label><select id="input"></select></div>
+  <div class="row"><label for="output">Output</label><select id="output"></select></div>
+  <div class="row"><label for="period">Period</label><select id="period"></select></div>
+  <div class="buttons"><button id="cancel">Cancel</button><button id="apply">Apply</button></div>
+</dialog>
+<div id="parameters"></div>
+<div class="row"><label for="backend">Backend</label><select id="backend"></select><span></span></div>
+<div class="row"><label for="mix">Dry/Wet</label><input id="mix" type="range" min="0" max="1" step="0.01"><output id="mix-value"></output></div>
+<div id="status" class="muted"></div>
+<button id="try" hidden>Try nonetheless</button>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const fixed = (x) => Number(x).toFixed(2);
+
+  function row(label, min, max, value, step, onInput, format) {
+    const div = document.createElement("div");
+    div.className = "row";
+    const name = document.createElement("label");
+    name.textContent = label;
+    const slider = document.createElement("input");
+    Object.assign(slider, { type: "range", min, max, step, value });
+    const out = document.createElement("output");
+    out.textContent = format(value);
+    slider.addEventListener("input", () => { out.textContent = format(slider.value); onInput(Number(slider.value)); });
+    div.append(name, slider, out);
+    return div;
+  }
+
+  function describe(s) {
+    $("device").textContent = s.rate > 0
+      ? `${s.input} → ${s.output} · ${(s.rate / 1000).toFixed(1)} kHz · ${s.block} samples · latency ${(1000 * s.latency / s.rate).toFixed(1)} ms`
+      : "no audio device";
+  }
+
+  // The audio dialog: the devices there are now (the first entry the system's default) and the
+  // period; Apply restarts the stream on them.
+  function fill(select, devices, chosen) {
+    select.replaceChildren(new Option("System default", -1, false, chosen < 0));
+    devices.forEach((d, i) => select.append(new Option(d.name + (d.default ? " (default)" : ""), i, false, i === chosen)));
+  }
+  async function openSettings() {
+    const d = await window.aniraDevices();
+    fill($("input"), d.inputs, d.input);
+    fill($("output"), d.outputs, d.output);
+    $("period").replaceChildren(...[64, 128, 256, 512, 1024, 2048].map(
+      (p) => new Option(`${p} samples`, p, false, p === d.period)));
+    $("settings").showModal();
+  }
+  async function apply() {
+    $("settings").close();
+    $("device").textContent = "opening…";
+    await window.aniraOpen(Number($("input").value), Number($("output").value), Number($("period").value));
+    describe(await window.aniraState());
+  }
+
+  async function build() {
+    const s = await window.aniraState();
+    document.title = s.name;
+    $("name").textContent = s.name;
+    describe(s);
+    $("audio").addEventListener("click", openSettings);
+    $("cancel").addEventListener("click", () => $("settings").close());
+    $("apply").addEventListener("click", apply);
+    s.parameters.forEach((p, i) => $("parameters").append(
+      row(p.name, p.min, p.max, p.value, (p.max - p.min) / 1000, (v) => window.aniraSetParameter(i, v), fixed)));
+    s.backends.forEach((b, i) => $("backend").append(new Option(b, i, false, i === s.backend)));
+    $("backend").addEventListener("change", (e) => window.aniraSetBackend(Number(e.target.value)));
+    $("mix").value = s.mix;
+    $("mix-value").textContent = `${Math.round(100 * s.mix)} %`;
+    $("mix").addEventListener("input", (e) => {
+      $("mix-value").textContent = `${Math.round(100 * e.target.value)} %`;
+      window.aniraSetMix(Number(e.target.value));
+    });
+    $("try").addEventListener("click", () => window.aniraTryNonetheless());
+    status();
+    setInterval(status, 250);
+  }
+
+  // 4 Hz: the verdict line and "Try nonetheless" follow the app's state.
+  async function status() {
+    const s = await window.aniraState();
+    $("status").textContent = s.status;
+    $("try").hidden = !s.waits;
+  }
+
+  build();
+</script>
+</body>
+</html>

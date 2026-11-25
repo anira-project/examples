@@ -34,6 +34,7 @@ option(ANIRA_EXAMPLES_WITH_RAVE
        "The RAVE examples (weights CC BY-NC 4.0, 50 to 130 MB per graph and engine)" OFF)
 option(ANIRA_EXAMPLES_WITH_JUCE "Every example as a JUCE plugin (VST3, AU, Standalone)" ON)
 option(ANIRA_EXAMPLES_WITH_CLAP "Every example as a CLAP plugin (CLAP, VST3, AUv2 through clap-wrapper)" ON)
+option(ANIRA_EXAMPLES_WITH_STANDALONE "Every example as a standalone app (CHOC WebView UI, miniaudio)" ON)
 option(ANIRA_EXAMPLES_WITH_MINIMAL_INFERENCE "Each engine's own API on the effects' weights, without anira" ON)
 option(ANIRA_EXAMPLES_LINK_COMPILE_COMMANDS
        "Link build/compile_commands.json, which clangd reads, to this tree's" OFF)
@@ -62,6 +63,9 @@ include(cmake/dependencies.cmake)
 include(cmake/examples.cmake)
 
 add_subdirectory(common)
+if(ANIRA_EXAMPLES_WITH_STANDALONE)
+    add_subdirectory(targets/standalone)
+endif()
 add_subdirectory(effects)
 if(ANIRA_EXAMPLES_WITH_MINIMAL_INFERENCE AND ANIRA_EXAMPLES_WITH_EFFECTS)
     add_subdirectory(targets/minimal-inference)

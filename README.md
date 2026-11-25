@@ -27,9 +27,10 @@ RAVE encoder and decoder with latent offsets, as anira's RAVE example). One CMak
 |---|---|---|
 | `targets/juce-plugin` | JUCE: VST3, AU, Standalone | `ANIRA_EXAMPLES_WITH_JUCE` |
 | `targets/clap-plugin` | CLAP, and VST3 and AUv2 through clap-wrapper | `ANIRA_EXAMPLES_WITH_CLAP` |
+| `targets/standalone` | an app: audio devices through the model (miniaudio), a page in a CHOC WebView; "Audio…" picks input, output and period | `ANIRA_EXAMPLES_WITH_STANDALONE` |
 | `targets/minimal-inference` | each engine's own API on the effects' weights, without anira | `ANIRA_EXAMPLES_WITH_MINIMAL_INFERENCE` |
 
-Every plugin has the example's parameters, a Backend choice (the engines of the build, then
+Every plugin and app has the example's parameters, a Backend choice (the engines of the build, then
 Bypass) with the real-time verdict anira measured at prepare ("Try nonetheless" runs a backend that
 is not real-time on this machine), and a dry/wet mix with the dry signal delayed by the reported
 latency. An offline render (a bounce) waits for late blocks instead of missing them.
@@ -47,7 +48,8 @@ cmake --preset all && cmake --build --preset all   # with the RAVE examples
 
 Requirements: CMake ≥ 3.25, Ninja, clang, `just`. Fetched by CMake: anira, tanh-lib and
 nlohmann_json (through models), JUCE 8.0.14, clap 1.2.10, clap-helpers and clap-wrapper 0.18.0
-(which downloads the VST3 and AudioUnit SDKs). Offline builds take local copies as models does
+(which downloads the VST3 and AudioUnit SDKs), CHOC and miniaudio 0.11.24; on Linux the standalone
+needs GTK 3 and WebKitGTK 4.1. Offline builds take local copies as models does
 (`FETCHCONTENT_SOURCE_DIR_*`, `ANIRA_MODELS_LOCAL_DIR`, `ANIRA_MODELS_CACHE_DIR`, see models'
 README).
 

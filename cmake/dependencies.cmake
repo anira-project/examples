@@ -13,6 +13,25 @@ if(ANIRA_EXAMPLES_WITH_JUCE)
     FetchContent_MakeAvailable(JUCE)
 endif()
 
+if(ANIRA_EXAMPLES_WITH_STANDALONE)
+    # CHOC (header-only: the window, the WebView, the message loop) and miniaudio (the audio device).
+    FetchContent_Declare(choc
+        GIT_REPOSITORY https://github.com/Tracktion/choc.git
+        GIT_TAG 9606a6615b592605993d92733cdfd6ca6ecbd825)
+    FetchContent_Declare(miniaudio
+        GIT_REPOSITORY https://github.com/mackron/miniaudio.git
+        GIT_TAG 0.11.24
+        GIT_SHALLOW TRUE)
+    FetchContent_GetProperties(choc)
+    if(NOT choc_POPULATED)
+        FetchContent_Populate(choc)
+    endif()
+    FetchContent_GetProperties(miniaudio)
+    if(NOT miniaudio_POPULATED)
+        FetchContent_Populate(miniaudio)
+    endif()
+endif()
+
 if(ANIRA_EXAMPLES_WITH_CLAP)
     FetchContent_Declare(clap
         GIT_REPOSITORY https://github.com/free-audio/clap.git
