@@ -42,7 +42,7 @@ inline std::filesystem::path module_directory() {
 
 /// The example's weights (anira_example in cmake/examples.cmake): compiled into the binary, or
 /// copied into its bundle, <binary dir>/../Resources/models/<repository>. Throws
-/// core::Error when they are missing.
+/// models::Error when they are missing.
 inline anira::models::core::ModelSource weights() {
 #ifdef ANIRA_EXAMPLE_EMBEDDED
     return embedded_models();
@@ -50,7 +50,7 @@ inline anira::models::core::ModelSource weights() {
     const std::filesystem::path dir =
         module_directory() / ".." / "Resources" / "models" / ANIRA_EXAMPLE_WEIGHTS;
     if (!std::filesystem::is_directory(dir)) {
-        throw anira::models::core::Error("the weights are missing: " + dir.string());
+        throw anira::models::Error("the weights are missing: " + dir.string());
     }
     return anira::models::core::ModelSource::directory(dir.lexically_normal());
 #endif
