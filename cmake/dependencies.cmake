@@ -32,8 +32,6 @@ if(ANIRA_EXAMPLES_WITH_STANDALONE)
     endif()
 endif()
 
-endif()
-
 if(ANIRA_EXAMPLES_WITH_CLAP)
     FetchContent_Declare(clap
         GIT_REPOSITORY https://github.com/free-audio/clap.git
