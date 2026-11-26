@@ -20,6 +20,11 @@ set(CMAKE_LINK_LIBRARIES_STRATEGY REORDER_FREELY)
 
 # Platform axes: TANH_OPERATING_SYSTEM, TANH_BINARY_FORMAT. Every OS decision keys on these.
 include(cmake/tanh/platform.cmake)
+# Windows: the DLL C runtime everywhere, as anira and the engines' prebuilt libraries have it
+# (clap-wrapper would otherwise link the static one into the CLAP and VST3 wrappers).
+if(TANH_OPERATING_SYSTEM STREQUAL "Windows")
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+endif()
 if(TANH_OPERATING_SYSTEM STREQUAL "macOS")
     # clap-wrapper's AUv2 and standalone wrappers are Objective-C++.
     enable_language(OBJC OBJCXX)
