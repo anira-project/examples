@@ -24,7 +24,10 @@ struct RenderState {
 
 // The one place a parameter address meets the engine. `realtime` is set for host automation on
 // the render thread (every engine setter is an atomic store, safe there as well).
-void set_parameter(ExampleEngine& engine, AUParameterAddress address, AUValue value, bool /*realtime*/) {
+void set_parameter(ExampleEngine& engine,
+                   AUParameterAddress address,
+                   AUValue value,
+                   bool /*realtime*/) {
     if (address < ExampleEngine::Example::k_parameters.size()) {
         engine.set_parameter(static_cast<std::size_t>(address), value);
         return;
@@ -33,14 +36,9 @@ void set_parameter(ExampleEngine& engine, AUParameterAddress address, AUValue va
         case AniraParameterBackend:
             engine.set_backend(static_cast<std::size_t>(value + 0.5f));
             break;
-        case AniraParameterMix:
-            engine.set_mix(value);
-            break;
-        case AniraParameterTryNonetheless:
-            engine.set_try_nonetheless(value >= 0.5f);
-            break;
-        default:
-            break;
+        case AniraParameterMix: engine.set_mix(value); break;
+        case AniraParameterTryNonetheless: engine.set_try_nonetheless(value >= 0.5f); break;
+        default: break;
     }
 }
 
@@ -53,17 +51,16 @@ AUValue get_parameter(const ExampleEngine& engine, AUParameterAddress address) {
         return engine.meter(static_cast<std::size_t>(address - AniraParameterFirstMeter));
     }
     switch (address) {
-        case AniraParameterBackend:
-            return static_cast<AUValue>(engine.backend());
-        case AniraParameterMix:
-            return engine.mix();
-        default:
-            return 0.f;
+        case AniraParameterBackend: return static_cast<AUValue>(engine.backend());
+        case AniraParameterMix: return engine.mix();
+        default: return 0.f;
     }
 }
 
 NSString* string_of(std::string_view text) {
-    return [[NSString alloc] initWithBytes:text.data() length:text.size() encoding:NSUTF8StringEncoding];
+    return [[NSString alloc] initWithBytes:text.data()
+                                    length:text.size()
+                                  encoding:NSUTF8StringEncoding];
 }
 
 }  // namespace
@@ -87,28 +84,26 @@ NSString* string_of(std::string_view text) {
     return string_of(ExampleEngine::Example::k_name);
 }
 
-- (nullable instancetype)initWithComponentDescription:(AudioComponentDescription)componentDescription
+- (nullable instancetype)initWithComponentDescription:
+                             (AudioComponentDescription)componentDescription
                                               options:(AudioComponentInstantiationOptions)options
                                                 error:(NSError**)outError {
     self = [super initWithComponentDescription:componentDescription options:options error:outError];
-    if (self == nil) {
-        return nil;
-    }
+    if (self == nil) { return nil; }
 
-    AVAudioFormat* format = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:48000.0 channels:2];
+    AVAudioFormat* format = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:48000.0
+                                                                           channels:2];
     _inputBus = [[AUAudioUnitBus alloc] initWithFormat:format error:outError];
     _outputBus = [[AUAudioUnitBus alloc] initWithFormat:format error:outError];
-    if (_inputBus == nil || _outputBus == nil) {
-        return nil;
-    }
+    if (_inputBus == nil || _outputBus == nil) { return nil; }
     _inputBus.maximumChannelCount = 2;
     _outputBus.maximumChannelCount = 2;
     _inputBusArray = [[AUAudioUnitBusArray alloc] initWithAudioUnit:self
                                                             busType:AUAudioUnitBusTypeInput
-                                                             busses:@[ _inputBus ]];
+                                                             busses:@[_inputBus]];
     _outputBusArray = [[AUAudioUnitBusArray alloc] initWithAudioUnit:self
                                                              busType:AUAudioUnitBusTypeOutput
-                                                              busses:@[ _outputBus ]];
+                                                              busses:@[_outputBus]];
 
     self.maximumFramesToRender = k_default_max_frames;
 
@@ -141,69 +136,78 @@ NSString* string_of(std::string_view text) {
         NSMutableArray<NSString*>* choices = nil;
         if (!p.m_choices.empty()) {
             choices = [NSMutableArray array];
-            for (const std::string_view choice : p.m_choices) { [choices addObject:string_of(choice)]; }
+            for (const std::string_view choice : p.m_choices) {
+                [choices addObject:string_of(choice)];
+            }
         }
-        [parameters addObject:[AUParameterTree createParameterWithIdentifier:string_of(p.m_id)
-                                                                         name:string_of(p.m_name)
-                                                                      address:i
-                                                                          min:choices != nil ? 0 : p.m_min
-                                                                          max:choices != nil ? choices.count - 1 : p.m_max
-                                                                         unit:choices != nil ? kAudioUnitParameterUnit_Indexed
-                                                                                             : kAudioUnitParameterUnit_Generic
-                                                                     unitName:nil
-                                                                        flags:writable
-                                                                 valueStrings:choices
-                                                          dependentParameters:nil]];
+        [parameters
+            addObject:[AUParameterTree
+                          createParameterWithIdentifier:string_of(p.m_id)
+                                                   name:string_of(p.m_name)
+                                                address:i
+                                                    min:choices != nil ? 0 : p.m_min
+                                                    max:choices != nil ? choices.count - 1 : p.m_max
+                                                   unit:choices != nil
+                                                            ? kAudioUnitParameterUnit_Indexed
+                                                            : kAudioUnitParameterUnit_Generic
+                                               unitName:nil
+                                                  flags:writable
+                                           valueStrings:choices
+                                    dependentParameters:nil]];
     }
 
     NSMutableArray<NSString*>* backendNames = [NSMutableArray array];
     for (const anira::examples::BackendChoice& choice : _kernel.backends()) {
         [backendNames addObject:@(choice.m_name)];
     }
-    [parameters addObject:[AUParameterTree createParameterWithIdentifier:@"backend"
-                                                                     name:@"Backend"
-                                                                  address:AniraParameterBackend
-                                                                      min:0
-                                                                      max:backendNames.count - 1
-                                                                     unit:kAudioUnitParameterUnit_Indexed
-                                                                 unitName:nil
-                                                                    flags:writable
-                                                             valueStrings:backendNames
-                                                      dependentParameters:nil]];
+    [parameters
+        addObject:[AUParameterTree createParameterWithIdentifier:@"backend"
+                                                            name:@"Backend"
+                                                         address:AniraParameterBackend
+                                                             min:0
+                                                             max:backendNames.count - 1
+                                                            unit:kAudioUnitParameterUnit_Indexed
+                                                        unitName:nil
+                                                           flags:writable
+                                                    valueStrings:backendNames
+                                             dependentParameters:nil]];
     if (!ExampleEngine::k_analyzer) {  // an analyzer leaves the audio as it is
-    [parameters addObject:[AUParameterTree createParameterWithIdentifier:@"mix"
-                                                                     name:@"Dry/Wet"
-                                                                  address:AniraParameterMix
-                                                                      min:0
-                                                                      max:1
-                                                                     unit:kAudioUnitParameterUnit_Generic
-                                                                 unitName:nil
-                                                                    flags:writable
-                                                             valueStrings:nil
-                                                      dependentParameters:nil]];
+        [parameters
+            addObject:[AUParameterTree createParameterWithIdentifier:@"mix"
+                                                                name:@"Dry/Wet"
+                                                             address:AniraParameterMix
+                                                                 min:0
+                                                                 max:1
+                                                                unit:kAudioUnitParameterUnit_Generic
+                                                            unitName:nil
+                                                               flags:writable
+                                                        valueStrings:nil
+                                                 dependentParameters:nil]];
     }
-    [parameters addObject:[AUParameterTree createParameterWithIdentifier:@"trynonetheless"
-                                                                     name:@"Try nonetheless"
-                                                                  address:AniraParameterTryNonetheless
-                                                                      min:0
-                                                                      max:1
-                                                                     unit:kAudioUnitParameterUnit_Boolean
-                                                                 unitName:nil
-                                                                    flags:writable
-                                                             valueStrings:nil
-                                                      dependentParameters:nil]];
+    [parameters
+        addObject:[AUParameterTree createParameterWithIdentifier:@"trynonetheless"
+                                                            name:@"Try nonetheless"
+                                                         address:AniraParameterTryNonetheless
+                                                             min:0
+                                                             max:1
+                                                            unit:kAudioUnitParameterUnit_Boolean
+                                                        unitName:nil
+                                                           flags:writable
+                                                    valueStrings:nil
+                                             dependentParameters:nil]];
     for (std::size_t i = 0; i < ExampleEngine::k_meters; ++i) {
         const anira::examples::Meter m = anira::examples::meter_info<Example>(i);
-        [parameters addObject:[AUParameterTree createParameterWithIdentifier:string_of(m.m_id)
-                                                                         name:string_of(m.m_name)
-                                                                      address:AniraParameterFirstMeter + i
-                                                                          min:m.m_min
-                                                                          max:m.m_max
-                                                                         unit:kAudioUnitParameterUnit_Generic
-                                                                     unitName:nil
-                                                                        flags:meter
-                                                                 valueStrings:nil
-                                                          dependentParameters:nil]];
+        [parameters
+            addObject:[AUParameterTree createParameterWithIdentifier:string_of(m.m_id)
+                                                                name:string_of(m.m_name)
+                                                             address:AniraParameterFirstMeter + i
+                                                                 min:m.m_min
+                                                                 max:m.m_max
+                                                                unit:kAudioUnitParameterUnit_Generic
+                                                            unitName:nil
+                                                               flags:meter
+                                                        valueStrings:nil
+                                                 dependentParameters:nil]];
     }
 
     _parameterTree = [AUParameterTree createTreeWithChildren:parameters];
@@ -212,9 +216,8 @@ NSString* string_of(std::string_view text) {
     _parameterTree.implementorValueObserver = ^(AUParameter* parameter, AUValue value) {
         set_parameter(*kernel, parameter.address, value, false);
     };
-    _parameterTree.implementorValueProvider = ^AUValue(AUParameter* parameter) {
-        return get_parameter(*kernel, parameter.address);
-    };
+    _parameterTree.implementorValueProvider =
+        ^AUValue(AUParameter* parameter) { return get_parameter(*kernel, parameter.address); };
     _parameterTree.implementorStringFromValueCallback =
         ^NSString*(AUParameter* parameter, const AUValue* valuePtr) {
             const AUValue value = valuePtr ? *valuePtr : parameter.value;
@@ -249,7 +252,7 @@ NSString* string_of(std::string_view text) {
 }
 
 - (NSArray<NSNumber*>*)channelCapabilities {
-    return @[ @1, @1, @2, @2 ];
+    return @[@1, @1, @2, @2];
 }
 
 - (BOOL)canProcessInPlace {
@@ -273,9 +276,7 @@ NSString* string_of(std::string_view text) {
         }
         return NO;
     }
-    if (![super allocateRenderResourcesAndReturnError:outError]) {
-        return NO;
-    }
+    if (![super allocateRenderResourcesAndReturnError:outError]) { return NO; }
 
     const AUAudioFrameCount maxFrames = self.maximumFramesToRender;
     const uint32_t channels = format.channelCount;
@@ -294,7 +295,8 @@ NSString* string_of(std::string_view text) {
         return NO;
     }
 
-    _inputBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:_inputBus.format frameCapacity:maxFrames];
+    _inputBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:_inputBus.format
+                                                 frameCapacity:maxFrames];
     _renderState.input_abl = _inputBuffer.mutableAudioBufferList;
     _renderState.input_storage.assign(_inputBuffer.floatChannelData,
                                       _inputBuffer.floatChannelData + channels);
@@ -314,16 +316,15 @@ NSString* string_of(std::string_view text) {
     ExampleEngine* kernel = &_kernel;
     RenderState* state = &_renderState;
 
-    return ^AUAudioUnitStatus(AudioUnitRenderActionFlags* actionFlags, const AudioTimeStamp* timestamp,
-                              AUAudioFrameCount frameCount, NSInteger outputBusNumber,
-                              AudioBufferList* outputData, const AURenderEvent* realtimeEventListHead,
+    return ^AUAudioUnitStatus(AudioUnitRenderActionFlags* actionFlags,
+                              const AudioTimeStamp* timestamp,
+                              AUAudioFrameCount frameCount,
+                              NSInteger outputBusNumber,
+                              AudioBufferList* outputData,
+                              const AURenderEvent* realtimeEventListHead,
                               AURenderPullInputBlock pullInputBlock) {
-        if (frameCount > state->max_frames) {
-            return kAudioUnitErr_TooManyFramesToProcess;
-        }
-        if (pullInputBlock == nullptr) {
-            return kAudioUnitErr_NoConnection;
-        }
+        if (frameCount > state->max_frames) { return kAudioUnitErr_TooManyFramesToProcess; }
+        if (pullInputBlock == nullptr) { return kAudioUnitErr_NoConnection; }
 
         // Host automation. Applied at the block start — threshold and gate do
         // not need sample-accurate timing.
@@ -331,7 +332,10 @@ NSString* string_of(std::string_view text) {
              event = event->head.next) {
             if (event->head.eventType == AURenderEventParameter ||
                 event->head.eventType == AURenderEventParameterRamp) {
-                set_parameter(*kernel, event->parameter.parameterAddress, event->parameter.value, true);
+                set_parameter(*kernel,
+                              event->parameter.parameterAddress,
+                              event->parameter.value,
+                              true);
             }
         }
 
@@ -343,10 +347,9 @@ NSString* string_of(std::string_view text) {
             input->mBuffers[ch].mDataByteSize = frameCount * sizeof(float);
         }
         AudioUnitRenderActionFlags pullFlags = 0;
-        const AUAudioUnitStatus status = pullInputBlock(&pullFlags, timestamp, frameCount, 0, input);
-        if (status != noErr) {
-            return status;
-        }
+        const AUAudioUnitStatus status =
+            pullInputBlock(&pullFlags, timestamp, frameCount, 0, input);
+        if (status != noErr) { return status; }
 
         for (UInt32 ch = 0; ch < channels; ++ch) {
             // A null output buffer means "process in place".
