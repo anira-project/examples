@@ -1,0 +1,80 @@
+name: build
+
+# Every target of the default examples (the small effects: steerable-nafx, GuitarLSTM, the stateful
+# LSTM, Silero VAD) on each desktop platform: the JUCE plugins (VST3, AU, Standalone), the CLAP
+# plugins (CLAP, VST3, AUv2 through clap-wrapper), the standalone apps and the minimal-inference
+# programs, with the weights fetched by their catalogs. The RAVE, speech and hand examples stay off
+# (hundreds of MB to GB of weights each). The CI actions are tanh-lab/ci-actions', as in anira and
+# tanh-lib; this workflow is the examples' own, for the Linux system packages the targets need.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SCCACHE_GHA_ENABLED: "true"
+  ACTIONS_CACHE_SERVICE_V2: "on"
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux-x86_64
+            os: ubuntu-24.04
+          - name: macOS-arm64
+            os: macos-15
+          - name: Windows-x86_64
+            os: windows-2025
+            vcvars: x64
+    runs-on: ${{ matrix.os }}
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0 # git-version.cmake reads the nearest tag
+      - uses: tanh-lab/ci-actions/setup-cpp-build-tools@v0.3.18
+      - name: Linux system packages (JUCE, the standalone's GTK 3 and WebKitGTK 4.1)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libjack-jackd2-dev libfreetype-dev libfontconfig1-dev \
+            libx11-dev libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev \
+            libxrender-dev libgl1-mesa-dev libgtk-3-dev libwebkit2gtk-4.1-dev libcurl4-openssl-dev
+      - name: MSVC environment
+        if: matrix.vcvars
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.vcvars }}
+      - uses: tanh-lab/ci-actions/cmake-build@v0.3.18
+        with:
+          PRESET: release
+
+  # The one status branch protection requires.
+  result:
+    name: build result
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: one ci-actions version repo-wide
+        run: |
+          test "$(grep -rho 'tanh-lab/ci-actions[^@]*@v[0-9.]*' .github/workflows/ | grep -o 'v[0-9.]*$' | sort -u | wc -l)" -eq 1
+      - name: aggregate
+        run: |
+          echo "build: ${{ needs.build.result }}"
+          [ "${{ needs.build.result }}" = "success" ] || exit 1
