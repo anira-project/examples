@@ -2,6 +2,7 @@
 
 #include <anira/anira.h>
 #include <anira/examples/Backends.h>
+#include <anira/models/core/CoreMlEngine.h>
 
 #include <algorithm>
 #include <anira/anira.hpp>
@@ -73,6 +74,14 @@ Backends::Backends(bool engines_to_choose) {
             })) {
             m_choices.push_back(choice);
         }
+    }
+    // Core ML through the models' temporary engine, where this build has it.
+    if (anira::models::core::coreml_engine() != nullptr) {
+        m_choices.push_back(
+            {.m_name = "Core ML",
+             .m_query = anira::PlanQuery{
+                 .backend = {.engine = ANIRA_ENGINE_CUSTOM,
+                             .engine_id = anira::models::core::k_coreml_engine_id}}});
     }
     m_choices.push_back({.m_name = "Bypass", .m_query = std::nullopt});
 }

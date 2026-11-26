@@ -70,6 +70,11 @@ if(ANIRA_EXAMPLES_WITH_HANDS)
     set(ANIRA_MODELS_WITH_RAVE_DJEMBE ON)
     set(ANIRA_MODELS_WITH_RAVE_MAGNETIC_RESONATOR_PIANO ON)
 endif()
+# Core ML through the models' temporary engine (core::coreml_engine(), until anira has one), on
+# macOS (mobile not yet: its weights are compiled in, the Core ML packages with them).
+if(TANH_OPERATING_SYSTEM STREQUAL "macOS")
+    set(ANIRA_MODELS_COREML_ENGINE ON)
+endif()
 add_subdirectory(models)
 
 message(STATUS "anira-examples ${TANH_VERSION_FULL} on ${TANH_OPERATING_SYSTEM} (${TANH_BINARY_FORMAT})")
