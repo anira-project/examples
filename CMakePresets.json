@@ -36,11 +36,19 @@
       "inherits": "release",
       "binaryDir": "${sourceDir}/build/desktop/all",
       "cacheVariables": { "ANIRA_EXAMPLES_WITH_RAVE": "ON" }
+    },
+    {
+      "name": "windows-release",
+      "displayName": "Release on Windows with MSVC (ONNX Runtime + LiteRT)",
+      "inherits": "release",
+      "binaryDir": "${sourceDir}/build/desktop/windows-release",
+      "cacheVariables": { "CMAKE_C_COMPILER": "cl", "CMAKE_CXX_COMPILER": "cl" }
     }
   ],
   "buildPresets": [
     { "name": "debug", "configurePreset": "debug" },
     { "name": "release", "configurePreset": "release" },
-    { "name": "all", "configurePreset": "all" }
+    { "name": "all", "configurePreset": "all" },
+    { "name": "windows-release", "configurePreset": "windows-release" }
   ]
 }

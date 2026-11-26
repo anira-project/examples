@@ -7,6 +7,11 @@
 
 #include <anira/anira.hpp>
 #include ANIRA_EXAMPLE_HEADER
+
+// clang-format off
+// First: on Linux it includes <gtk/gtk.h>, which choc_DesktopWindow.h uses without including it.
+#include <choc/gui/choc_MessageLoop.h>
+// clang-format on
 #include <anira/examples/Backends.h>
 #include <anira/examples/DryWet.h>
 #include <anira/examples/Example.h>
@@ -15,7 +20,6 @@
 #include <anira/examples/standalone/Ui.h>
 #include <choc/containers/choc_Value.h>
 #include <choc/gui/choc_DesktopWindow.h>
-#include <choc/gui/choc_MessageLoop.h>
 #include <choc/gui/choc_WebView.h>
 #include <miniaudio.h>
 

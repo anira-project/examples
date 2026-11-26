@@ -33,10 +33,13 @@ jobs:
         include:
           - name: Linux-x86_64
             os: ubuntu-24.04
+            preset: release
           - name: macOS-arm64
             os: macos-15
+            preset: release
           - name: Windows-x86_64
             os: windows-2025
+            preset: windows-release # MSVC: the runner's clang is older than its STL accepts
             vcvars: x64
     runs-on: ${{ matrix.os }}
     env:
@@ -61,7 +64,7 @@ jobs:
           arch: ${{ matrix.vcvars }}
       - uses: tanh-lab/ci-actions/cmake-build@v0.3.18
         with:
-          PRESET: release
+          PRESET: ${{ matrix.preset }}
 
   # The one status branch protection requires.
   result:
