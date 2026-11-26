@@ -34,7 +34,7 @@ public:
     static constexpr std::string_view k_name = "Nemotron";
     static constexpr Kind k_kind = Kind::Analyzer;
     static constexpr int k_channels = 1;
-    static constexpr std::size_t k_handlers = 1;  // the ASR encoder
+    static constexpr std::size_t k_handlers = 0;  // its models pick their engines (jobs)
     static constexpr std::array<Parameter, 1> k_parameters{{
         {.m_id = "threshold",
          .m_name = "Speech threshold",

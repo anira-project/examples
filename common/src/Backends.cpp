@@ -46,7 +46,12 @@ std::string format(const char* pattern, auto... args) {
 
 }  // namespace
 
-Backends::Backends() {
+Backends::Backends(bool engines_to_choose) {
+    if (!engines_to_choose) {
+        m_choices.push_back({.m_name = "Automatic", .m_query = anira::PlanQuery{}});
+        m_choices.push_back({.m_name = "Bypass", .m_query = std::nullopt});
+        return;
+    }
     const std::array<BackendChoice, 5> engines{{
         {.m_name = "ONNX Runtime",
          .m_query = anira::PlanQuery{.backend = {.engine = ANIRA_ENGINE_ONNXRUNTIME}}},

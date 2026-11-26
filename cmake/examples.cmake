@@ -79,9 +79,12 @@ function(anira_example name)
         else()
             foreach(_file IN LISTS _files)
                 get_filename_component(_dir "${_file}" DIRECTORY)
+                # A hard link where the cache and the bundle share a volume (no copy of the
+                # weights per bundle), else a copy.
                 string(APPEND _script
                     "file(MAKE_DIRECTORY \"\${DEST}/${_repo}/${_dir}\")\n"
-                    "file(COPY_FILE \"${_weights}/${_file}\" \"\${DEST}/${_repo}/${_file}\" ONLY_IF_DIFFERENT)\n")
+                    "file(REMOVE \"\${DEST}/${_repo}/${_file}\")\n"
+                    "file(CREATE_LINK \"${_weights}/${_file}\" \"\${DEST}/${_repo}/${_file}\" COPY_ON_ERROR)\n")
             endforeach()
         endif()
     endforeach()

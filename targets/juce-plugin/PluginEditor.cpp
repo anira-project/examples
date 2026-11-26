@@ -60,9 +60,9 @@ void PluginEditor::resized() {
     for (juce::Label& meter : m_meters) {
         meter.setBounds(area.removeFromTop(k_meter_height).reduced(8, 0));
     }
-    if constexpr (k_text) { m_text.setBounds(area.removeFromTop(k_text_height).reduced(8, 4)); }
     m_status.setBounds(area.removeFromTop(k_status_height).reduced(8, 0));
     m_try_nonetheless.setBounds(area.removeFromTop(k_button_height).reduced(8, 2));
+    if constexpr (k_text) { m_text.setBounds(area.reduced(8, 4)); }  // the rest, at the bottom
 }
 
 void PluginEditor::timerCallback() {

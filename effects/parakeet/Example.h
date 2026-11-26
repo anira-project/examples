@@ -37,7 +37,7 @@ public:
     static constexpr std::string_view k_name = "Parakeet";
     static constexpr Kind k_kind = Kind::Analyzer;
     static constexpr int k_channels = 1;
-    static constexpr std::size_t k_handlers = 1;  // Silero VAD (Parakeet picks its own engines)
+    static constexpr std::size_t k_handlers = 0;  // its models pick their engines (jobs)
     static constexpr std::array<Parameter, 0> k_parameters{};
     static constexpr std::array<Meter, 1> k_meters{{
         {.m_id = "probability", .m_name = "Speech probability"},

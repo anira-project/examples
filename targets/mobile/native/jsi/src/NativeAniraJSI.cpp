@@ -125,7 +125,11 @@ jsi::String NativeAniraJSI::getState(jsi::Runtime& rt) {
         const anira::examples::Parameter& p = Example::k_parameters[i];
         json += (i > 0 ? ",{\"name\":" : "{\"name\":") + json_string(p.m_name) +
                 ",\"min\":" + number(p.m_min) + ",\"max\":" + number(p.m_max) +
-                ",\"value\":" + number(engine.parameter(i)) + "}";
+                ",\"value\":" + number(engine.parameter(i)) + ",\"choices\":[";
+        for (size_t k = 0; k < p.m_choices.size(); ++k) {
+            json += (k > 0 ? "," : "") + json_string(p.m_choices[k]);
+        }
+        json += "]}";
     }
     json += "],\"meters\":[";
     for (size_t i = 0; i < ExampleEngine::k_meters; ++i) {

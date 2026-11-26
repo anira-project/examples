@@ -102,7 +102,7 @@ private:
     std::string m_error;                 // why there is none, or why prepare failed
     bool m_prepared = false;
 
-    anira::examples::Backends m_backends;
+    anira::examples::Backends m_backends{Example::k_handlers > 0};
     juce::AudioProcessorValueTreeState m_parameters;
     // The parameters' values (APVTS's atomics: read on the audio thread without a lock).
     std::array<std::atomic<float>*, Example::k_parameters.size()> m_values{};

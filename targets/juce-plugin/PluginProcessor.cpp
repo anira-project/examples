@@ -94,6 +94,18 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::layout(
     const anira::examples::Backends& backends) {
     juce::AudioProcessorValueTreeState::ParameterLayout parameters;
     for (const anira::examples::Parameter& p : Example::k_parameters) {
+        if (!p.m_choices.empty()) {
+            juce::StringArray choices;
+            for (const std::string_view choice : p.m_choices) {
+                choices.add(juce::String(std::string(choice)));
+            }
+            parameters.add(std::make_unique<juce::AudioParameterChoice>(
+                juce::ParameterID{juce::String(std::string(p.m_id)), 1},
+                juce::String(std::string(p.m_name)),
+                choices,
+                static_cast<int>(p.m_default)));
+            continue;
+        }
         parameters.add(std::make_unique<juce::AudioParameterFloat>(
             juce::ParameterID{juce::String(std::string(p.m_id)), 1},
             juce::String(std::string(p.m_name)),

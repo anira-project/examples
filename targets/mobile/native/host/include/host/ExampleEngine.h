@@ -88,7 +88,7 @@ private:
     std::unique_ptr<Example> m_example;  // none when its weights are missing
     std::string m_error;
     bool m_prepared = false;
-    anira::examples::Backends m_backends;
+    anira::examples::Backends m_backends{Example::k_handlers > 0};
 
     std::array<std::atomic<float>, Example::k_parameters.size()> m_values{};
     std::atomic<std::size_t> m_backend{0};

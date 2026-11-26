@@ -9,6 +9,7 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -16,13 +17,15 @@
 
 namespace anira::examples {
 
-/// A parameter of an example, beside the ones every target has (backend, dry/wet).
+/// A parameter of an example, beside the ones every target has (backend, dry/wet). With
+/// `m_choices` it is a choice: its value the index of the chosen one, 0 to size - 1.
 struct Parameter {
     std::string_view m_id;
     std::string_view m_name;
     float m_min = 0.0F;
     float m_max = 1.0F;
     float m_default = 0.0F;
+    std::span<const std::string_view> m_choices{};
 };
 
 /// A value an example shows (a speech probability, a level), read on any thread.

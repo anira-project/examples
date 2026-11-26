@@ -213,6 +213,11 @@ public:
             parameter.addMember("min", p.m_min);
             parameter.addMember("max", p.m_max);
             parameter.addMember("value", m_values[i].load());
+            auto choices = choc::value::createEmptyArray();
+            for (const std::string_view choice : p.m_choices) {
+                choices.addArrayElement(std::string(choice));
+            }
+            parameter.addMember("choices", choices);
             parameters.addArrayElement(parameter);
         }
         state.addMember("parameters", parameters);
@@ -241,6 +246,7 @@ public:
             }
         }
         state.addMember("transcript", lines);
+        state.addMember("text", anira::examples::TextLike<Example>);
         auto backends = choc::value::createEmptyArray();
         for (const anira::examples::BackendChoice& choice : m_backends.choices()) {
             backends.addArrayElement(std::string(choice.m_name));
@@ -380,7 +386,7 @@ private:
     std::array<std::vector<float>, Example::k_channels> m_planes;
     anira::examples::DryWet m_dry_wet;
     anira::Tensor m_audio{};
-    anira::examples::Backends m_backends;
+    anira::examples::Backends m_backends{Example::k_handlers > 0};
     ma_context m_ma;     // ma_context_init fills it
     ma_device m_device;  // ma_device_init fills it
 
@@ -409,7 +415,9 @@ int run() {
     App app;
     app.start();
 
-    choc::ui::DesktopWindow window({.x = 100, .y = 100, .width = 480, .height = 420});
+    // A speech example's transcript wants the room.
+    constexpr int k_height = anira::examples::TextLike<Example> ? 720 : 420;
+    choc::ui::DesktopWindow window({.x = 100, .y = 100, .width = 480, .height = k_height});
     window.setWindowTitle(std::string(Example::k_name));
     window.setResizable(true);
     window.setMinimumSize(360, 280);

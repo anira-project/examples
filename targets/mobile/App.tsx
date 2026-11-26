@@ -26,7 +26,7 @@ interface EngineState {
     audioRunning: boolean;
     sampleRate: number;
     latency: number;
-    parameters: (Range & { value: number })[];
+    parameters: (Range & { value: number; choices: string[] })[];
     meters: Range[];
     backends: string[];
     backend: number;
@@ -232,7 +232,26 @@ export default function App() {
                 </View>
 
                 <View style={styles.card}>
-                    {(state?.parameters ?? []).map((p, i) => (
+                    {(state?.parameters ?? []).map((p, i) =>
+                        p.choices.length > 0 ? (
+                            <View key={p.name} style={styles.row}>
+                                <Text style={styles.dim}>{p.name.toLowerCase()}</Text>
+                                <View style={styles.segment}>
+                                    {p.choices.map((choice, k) => (
+                                        <Pressable
+                                            key={choice}
+                                            style={[
+                                                styles.segmentItem,
+                                                Math.round(values[i] ?? p.value) === k && styles.segmentActive,
+                                            ]}
+                                            onPress={() => setParameter(i, k)}
+                                        >
+                                            <Text style={styles.segmentText}>{choice}</Text>
+                                        </Pressable>
+                                    ))}
+                                </View>
+                            </View>
+                        ) : (
                         <View key={p.name} style={styles.control}>
                             <Row label={p.name.toLowerCase()} value={(values[i] ?? p.value).toFixed(2)} />
                             <Slider
@@ -242,7 +261,8 @@ export default function App() {
                                 onChange={(v) => setParameter(i, v)}
                             />
                         </View>
-                    ))}
+                        )
+                    )}
                     {!state?.analyzer && <View style={styles.control}>
                         <Row label="dry/wet" value={`${Math.round(mix * 100)} %`} />
                         <Slider

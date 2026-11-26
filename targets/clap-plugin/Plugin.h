@@ -101,7 +101,7 @@ private:
     anira::Context m_context{anira::ContextConfig{}};
     std::unique_ptr<Example> m_example;  // none when its weights are missing
     bool m_prepared = false;
-    Backends m_backends;
+    Backends m_backends{Example::k_handlers > 0};
 
     std::array<std::atomic<double>, k_params> m_values{};
     std::atomic<bool> m_offline{false};

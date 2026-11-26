@@ -205,6 +205,11 @@ bool Plugin::paramsInfo(std::uint32_t index, clap_param_info* info) const noexce
         info->min_value = p.m_min;
         info->max_value = p.m_max;
         info->default_value = p.m_default;
+        if (!p.m_choices.empty()) {
+            info->min_value = 0.0;
+            info->max_value = static_cast<double>(p.m_choices.size() - 1);
+            info->flags |= CLAP_PARAM_IS_STEPPED | CLAP_PARAM_IS_ENUM;
+        }
         return true;
     }
     switch (info->id) {
@@ -259,7 +264,16 @@ bool Plugin::paramsValueToText(clap_id id,
         case k_try_nonetheless:
             std::snprintf(text.data(), text.size(), "%s", value >= 0.5 ? "On" : "Off");
             break;
-        default: std::snprintf(text.data(), text.size(), "%.2f", value); break;
+        default:
+            if (id < k_example_params && !Example::k_parameters[id].m_choices.empty()) {
+                const auto& choices = Example::k_parameters[id].m_choices;
+                const auto index = static_cast<std::size_t>(std::lround(value));
+                if (index >= choices.size()) { return false; }
+                copy(choices[index], display, size);
+                return true;
+            }
+            std::snprintf(text.data(), text.size(), "%.2f", value);
+            break;
     }
     copy(text.data(), display, size);
     return true;
@@ -281,7 +295,16 @@ bool Plugin::paramsTextToValue(clap_id id, const char* display, double* value) n
             if (text != "On" && text != "Off") { return false; }
             *value = text == "On" ? 1.0 : 0.0;
             return true;
-        default: *value = std::strtod(display, nullptr); return true;
+        default:
+            if (id < k_example_params && !Example::k_parameters[id].m_choices.empty()) {
+                const auto& choices = Example::k_parameters[id].m_choices;
+                const auto it = std::ranges::find(choices, text);
+                if (it == choices.end()) { return false; }
+                *value = static_cast<double>(it - choices.begin());
+                return true;
+            }
+            *value = std::strtod(display, nullptr);
+            return true;
     }
 }
 

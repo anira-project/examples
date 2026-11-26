@@ -7,7 +7,8 @@
 <style>
   :root { color-scheme: light dark; --fg: #1d1d1f; --muted: #6e6e73; --bg: #f5f5f7; --accent: #0071e3; }
   @media (prefers-color-scheme: dark) { :root { --fg: #f5f5f7; --muted: #a1a1a6; --bg: #1d1d1f; --accent: #2997ff; } }
-  body { margin: 0; padding: 20px; font: 14px -apple-system, system-ui, sans-serif; color: var(--fg); background: var(--bg); }
+  html, body { height: 100%; }
+  body { box-sizing: border-box; display: flex; flex-direction: column; margin: 0; padding: 20px; font: 14px -apple-system, system-ui, sans-serif; color: var(--fg); background: var(--bg); }
   h1 { font-size: 18px; margin: 0 0 4px; }
   .muted { color: var(--muted); font-size: 12px; }
   .row { display: grid; grid-template-columns: 110px 1fr 56px; align-items: center; gap: 10px; margin: 10px 0; }
@@ -26,7 +27,7 @@
   .meter .bar { height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--muted) 25%, transparent); overflow: hidden; }
   .meter .fill { height: 100%; width: 0; background: var(--accent); transition: width 60ms linear; }
   .meter output { text-align: right; font-variant-numeric: tabular-nums; }
-  #transcript { margin: 12px 0; padding: 10px 12px; border-radius: 8px; max-height: 220px; overflow-y: auto;
+  #transcript { flex: 1 1 auto; min-height: 140px; margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; overflow-y: auto;
                 background: color-mix(in srgb, var(--muted) 12%, transparent); font-size: 13px; line-height: 1.5; }
   #transcript .time { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 8px; }
   #transcript .open { opacity: 0.6; }
@@ -48,11 +49,11 @@
 </dialog>
 <div id="parameters"></div>
 <div id="meters"></div>
-<div id="transcript" hidden></div>
 <div class="row"><label for="backend">Backend</label><select id="backend"></select><span></span></div>
 <div class="row" id="mix-row"><label for="mix">Dry/Wet</label><input id="mix" type="range" min="0" max="1" step="0.01"><output id="mix-value"></output></div>
 <div id="status" class="muted"></div>
 <button id="try" hidden>Try nonetheless</button>
+<div id="transcript" hidden></div>
 <script>
   const $ = (id) => document.getElementById(id);
   const fixed = (x) => Number(x).toFixed(2);
@@ -119,8 +120,22 @@
     $("apply").addEventListener("click", apply);
     $("input").addEventListener("change", refreshRates);
     $("output").addEventListener("change", refreshRates);
-    s.parameters.forEach((p, i) => $("parameters").append(
-      row(p.name, p.min, p.max, p.value, (p.max - p.min) / 1000, (v) => window.aniraSetParameter(i, v), fixed)));
+    s.parameters.forEach((p, i) => {
+      if (p.choices.length === 0) {
+        $("parameters").append(
+          row(p.name, p.min, p.max, p.value, (p.max - p.min) / 1000, (v) => window.aniraSetParameter(i, v), fixed));
+        return;
+      }
+      const div = document.createElement("div");
+      div.className = "row";
+      const name = document.createElement("label");
+      name.textContent = p.name;
+      const select = document.createElement("select");
+      p.choices.forEach((c, k) => select.append(new Option(c, k, false, k === Math.round(p.value))));
+      select.addEventListener("change", () => window.aniraSetParameter(i, Number(select.value)));
+      div.append(name, select, document.createElement("span"));
+      $("parameters").append(div);
+    });
     s.backends.forEach((b, i) => $("backend").append(new Option(b, i, false, i === s.backend)));
     $("backend").addEventListener("change", (e) => window.aniraSetBackend(Number(e.target.value)));
     $("mix-row").hidden = s.analyzer;  // an analyzer leaves the audio as it is
@@ -147,11 +162,12 @@
     const s = await window.aniraState();
     $("status").textContent = s.status;
     $("try").hidden = !s.waits;
-    if (s.transcript.length > 0) {
+    if (s.text) {
       const box = $("transcript");
-      const atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 4;
       box.hidden = false;
-      box.replaceChildren(...s.transcript.map((line) => {
+      if (s.transcript.length === 0) {
+        box.textContent = "Speak: the transcript appears here.";
+      } else box.replaceChildren(...s.transcript.map((line) => {
         const div = document.createElement("div");
         if (!line.final) div.className = "open";
         const time = document.createElement("span");
@@ -160,7 +176,7 @@
         div.append(time, (line.speaker >= 0 ? `speaker ${line.speaker}: ` : "") + line.text);
         return div;
       }));
-      if (atBottom) box.scrollTop = box.scrollHeight;
+      box.scrollTop = box.scrollHeight;  // the newest line in view
     }
     [...$("meters").children].forEach((div, i) => {
       const m = s.meters[i];

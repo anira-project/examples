@@ -32,7 +32,10 @@ public:
     static constexpr std::size_t k_max_choices = 8;
     static constexpr std::size_t k_max_handlers = 4;
 
-    Backends();
+    /// `engines_to_choose`: the example has handlers whose engine the user picks; without
+    /// (k_handlers 0: its models pick their engines themselves) the choices are Automatic and
+    /// Bypass.
+    explicit Backends(bool engines_to_choose = true);
 
     [[nodiscard]] const std::vector<BackendChoice>& choices() const noexcept { return m_choices; }
     /// ONNX Runtime where the build has it, else the first engine.

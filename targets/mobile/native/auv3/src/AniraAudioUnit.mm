@@ -138,15 +138,21 @@ NSString* string_of(std::string_view text) {
     NSMutableArray<AUParameter*>* parameters = [NSMutableArray array];
     for (std::size_t i = 0; i < Example::k_parameters.size(); ++i) {
         const anira::examples::Parameter& p = Example::k_parameters[i];
+        NSMutableArray<NSString*>* choices = nil;
+        if (!p.m_choices.empty()) {
+            choices = [NSMutableArray array];
+            for (const std::string_view choice : p.m_choices) { [choices addObject:string_of(choice)]; }
+        }
         [parameters addObject:[AUParameterTree createParameterWithIdentifier:string_of(p.m_id)
                                                                          name:string_of(p.m_name)
                                                                       address:i
-                                                                          min:p.m_min
-                                                                          max:p.m_max
-                                                                         unit:kAudioUnitParameterUnit_Generic
+                                                                          min:choices != nil ? 0 : p.m_min
+                                                                          max:choices != nil ? choices.count - 1 : p.m_max
+                                                                         unit:choices != nil ? kAudioUnitParameterUnit_Indexed
+                                                                                             : kAudioUnitParameterUnit_Generic
                                                                      unitName:nil
                                                                         flags:writable
-                                                                 valueStrings:nil
+                                                                 valueStrings:choices
                                                           dependentParameters:nil]];
     }
 
